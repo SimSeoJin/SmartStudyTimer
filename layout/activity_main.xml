@@ -15,13 +15,13 @@
 
         <androidx.camera.view.PreviewView
             android:id="@+id/previewView"
-            android:layout_width="0dp"
-            android:layout_height="0dp" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <com.example.myapplication.FaceOverlayView
             android:id="@+id/faceOverlayView"
-            android:layout_width="0dp"
-            android:layout_height="0dp" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
     </FrameLayout>
 
