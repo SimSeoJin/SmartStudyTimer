@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor // 생성자를 통해 의존성 주입 어노테이션
+@RequiredArgsConstructor 
 public class MemberServiceimpl implements MemberService{
 
     private final MemberRepository memberRepository;

@@ -19,7 +19,6 @@ public class MemberController {
         return "hello";
     }
 
-    // Member dto를 받음.
     @PostMapping("/join")
     public String join(@RequestBody JoinRequest joinRequest){
         return memberService.join(
