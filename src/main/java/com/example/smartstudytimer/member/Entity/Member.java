@@ -1,12 +1,7 @@
 package com.example.smartstudytimer.member.Entity;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.*;
-import java.util.List;
 
 @NoArgsConstructor
 @Builder
@@ -22,7 +17,13 @@ public class Member {
     @Column(name = "member_id") 
     private Long memberId;
 
-    @Column(name = "login_id", nullable = false, unique = true) 
+    @Column(name = "oauth_provider")
+    private String oauthProvider;
+
+    @Column(name = "oauth_id")
+    private String oauthId;
+
+    @Column(name = "login_id", unique = true) 
     private String id;
 
     @Column(name = "nickname", nullable = false, unique = true) 
@@ -31,8 +32,8 @@ public class Member {
     @Column(name = "phone_number") 
     private String phoneNumber;
 
-    @Column(name = "password", nullable = false) 
+    @Column(name = "password") 
     private String password;
 
-
+    
 }
