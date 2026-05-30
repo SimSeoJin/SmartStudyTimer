@@ -80,10 +80,8 @@ public class KakaoService {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(responseBody);
 
-            // 1. 카카오 고유 ID 파싱
             String kakaoId = jsonNode.get("id").asText();
 
-            // 2. 카카오 실제 닉네임 파싱 (기존에 만들어 둔 안전한 방어 코드)
             String nickname = "카카오유저"; 
             if (jsonNode.has("properties") && jsonNode.get("properties").has("nickname")) {
                 nickname = jsonNode.get("properties").get("nickname").asText();
@@ -99,7 +97,6 @@ public class KakaoService {
             System.out.println("카카오 실제 닉네임: " + nickname);
             System.out.println("=======================================");
 
-            // 💡 [수정] ID와 닉네임을 Map에 담아서 둘 다 반환합니다.
             Map<String, String> userInfo = new HashMap<>();
             userInfo.put("kakaoId", kakaoId);
             userInfo.put("nickname", nickname);
