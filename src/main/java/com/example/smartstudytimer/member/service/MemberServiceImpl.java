@@ -14,7 +14,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public String join(String id, String name, String phoneNumber, String password) {
-        return "success"; 
+        return "success";
     }
 
     @Override
@@ -23,13 +23,13 @@ public class MemberServiceImpl implements MemberService {
         return memberRepository.findByOauthProviderAndOauthId(provider, oauthId)
                 .orElseGet(() -> {
                     System.out.println("신규 소셜 회원 감지: 자동 회원가입 진행");
-                    
+
                     Member newMember = Member.builder()
-                            .name(nickname) 
+                            .name(nickname)
                             .oauthProvider(provider)
                             .oauthId(oauthId)
-                            .build(); 
-                    
+                            .build();
+
                     return memberRepository.saveAndFlush(newMember);
                 });
     }
