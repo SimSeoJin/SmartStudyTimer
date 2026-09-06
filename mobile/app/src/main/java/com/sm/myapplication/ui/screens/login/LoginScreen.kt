@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,9 +42,10 @@ import com.sm.myapplication.ui.theme.Black50
 import com.sm.myapplication.ui.theme.KakaoYellow
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewModel()) {
     var id by remember { mutableStateOf("") }
     var pw by remember { mutableStateOf("") }
+    val uiState by viewModel.state
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         // 헤더
@@ -93,10 +95,28 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 .clip(RoundedCornerShape(10.dp))
                 .background(BgGreenTint)
                 .border(1.dp, BgGreenLight, RoundedCornerShape(10.dp))
-                .clickable { onLoginSuccess() },
+                .clickable {
+                    if (!uiState.isLoading) {
+                        viewModel.login(id, pw, onSuccess = onLoginSuccess)
+                    }
+                },
             contentAlignment = Alignment.Center,
         ) {
-            Text("Log In", color = Black50, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            Text(
+                if (uiState.isLoading) "로그인 중..." else "Log In",
+                color = Black50,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+            )
+        }
+
+        if (uiState.errorMessage != null) {
+            Text(
+                text = uiState.errorMessage,
+                color = Color(0xFFD32F2F),
+                fontSize = 13.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
+            )
         }
 
         Spacer(Modifier.height(14.dp))

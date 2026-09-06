@@ -13,14 +13,35 @@ private val Context.dataStore by preferencesDataStore(name = "app_prefs")
 class AppPreferences(private val context: Context) {
     private val KEY_DDAY_EPOCH = longPreferencesKey("dday_epoch_day")
     private val KEY_DDAY_LABEL = stringPreferencesKey("dday_label")
+    private val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token")
+    private val KEY_MEMBER_ID = longPreferencesKey("member_id")
+    private val KEY_MEMBER_NAME = stringPreferencesKey("member_name")
 
     val ddayEpochDay: Flow<Long?> = context.dataStore.data.map { it[KEY_DDAY_EPOCH] }
     val ddayLabel: Flow<String> = context.dataStore.data.map { it[KEY_DDAY_LABEL] ?: "기말 고사" }
+
+    val accessToken: Flow<String?> = context.dataStore.data.map { it[KEY_ACCESS_TOKEN] }
 
     suspend fun setDDay(epochDay: Long, label: String) {
         context.dataStore.edit {
             it[KEY_DDAY_EPOCH] = epochDay
             it[KEY_DDAY_LABEL] = label
+        }
+    }
+
+    suspend fun saveSession(accessToken: String, memberId: Long, name: String) {
+        context.dataStore.edit {
+            it[KEY_ACCESS_TOKEN] = accessToken
+            it[KEY_MEMBER_ID] = memberId
+            it[KEY_MEMBER_NAME] = name
+        }
+    }
+
+    suspend fun clearSession() {
+        context.dataStore.edit {
+            it.remove(KEY_ACCESS_TOKEN)
+            it.remove(KEY_MEMBER_ID)
+            it.remove(KEY_MEMBER_NAME)
         }
     }
 }
