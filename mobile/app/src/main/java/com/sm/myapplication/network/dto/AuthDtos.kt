@@ -12,6 +12,10 @@ data class JoinRequest(
     val password: String,
 )
 
+data class KakaoTokenRequest(
+    val accessToken: String,
+)
+
 data class AuthResponse(
     val accessToken: String,
     val memberId: Long,

@@ -12,6 +12,7 @@ import com.sm.myapplication.data.entity.TodoEntity
 import com.sm.myapplication.network.ApiClient
 import com.sm.myapplication.network.dto.ErrorResponse
 import com.sm.myapplication.network.dto.JoinRequest
+import com.sm.myapplication.network.dto.KakaoTokenRequest
 import com.sm.myapplication.network.dto.LoginRequest
 
 class AppRepository(
@@ -51,6 +52,15 @@ class AppRepository(
 
     suspend fun login(id: String, password: String): Result<Unit> = runCatching {
         val response = ApiClient.authApi.login(LoginRequest(id, password))
+        val body = response.body()
+        if (!response.isSuccessful || body == null) {
+            throw Exception(parseErrorMessage(response.errorBody()?.string()))
+        }
+        prefs.saveSession(body.accessToken, body.memberId, body.name)
+    }
+
+    suspend fun loginWithKakao(kakaoAccessToken: String): Result<Unit> = runCatching {
+        val response = ApiClient.authApi.kakaoLogin(KakaoTokenRequest(kakaoAccessToken))
         val body = response.body()
         if (!response.isSuccessful || body == null) {
             throw Exception(parseErrorMessage(response.errorBody()?.string()))

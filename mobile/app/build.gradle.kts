@@ -1,9 +1,21 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// 카카오 네이티브 앱 키: local.properties(git에 커밋되지 않음)의 KAKAO_NATIVE_APP_KEY를 읽음.
+// 없으면 플레이스홀더를 쓰므로, 실제 카카오 로그인을 테스트하려면 Kakao Developers에서
+// 발급받은 네이티브 앱 키를 local.properties에 추가해야 함.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val kakaoNativeAppKey: String =
+    (localProperties.getProperty("KAKAO_NATIVE_APP_KEY") ?: "REPLACE_WITH_KAKAO_NATIVE_APP_KEY")
 
 android {
     namespace = "com.sm.myapplication"
@@ -16,6 +28,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+
         ndk {
             abiFilters += listOf(
                 "armeabi-v7a",
@@ -27,6 +42,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -75,6 +91,9 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // 카카오 로그인
+    implementation("com.kakao.sdk:v2-user:2.25.0")
 
     // CameraX
     implementation("androidx.camera:camera-core:1.3.4")

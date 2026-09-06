@@ -20,19 +20,29 @@ import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kakao.sdk.auth.model.OAuthToken
+import com.kakao.sdk.common.model.ClientError
+import com.kakao.sdk.common.model.ClientErrorCause
+import com.kakao.sdk.user.UserApiClient
 import com.sm.myapplication.ui.theme.BgGreenLight
 import com.sm.myapplication.ui.theme.Black50
 import com.sm.myapplication.ui.theme.KakaoYellow
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewModel()) {
+    val context = LocalContext.current
+    val uiState by viewModel.state
+
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         // 헤더
         Box(
@@ -60,6 +70,16 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         Spacer(Modifier.weight(1f))
 
+        val errorMessage = uiState.errorMessage
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                color = Color(0xFFD32F2F),
+                fontSize = 13.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+        }
+
         // 카카오 로그인
         Row(
             modifier = Modifier
@@ -68,13 +88,36 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 .height(54.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(KakaoYellow)
-                .clickable { onLoginSuccess() },
+                .clickable {
+                    if (uiState.isLoading) return@clickable
+
+                    val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
+                        if (token != null) {
+                            viewModel.onKakaoTokenReceived(token.accessToken, onSuccess = onLoginSuccess)
+                        } else if (error != null) {
+                            // 사용자가 취소한 경우는 에러로 표시하지 않음
+                            val cancelled = error is ClientError && error.reason == ClientErrorCause.Cancelled
+                            if (!cancelled) viewModel.onKakaoLoginFailed(error.message)
+                        }
+                    }
+
+                    if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                        UserApiClient.instance.loginWithKakaoTalk(context, callback = callback)
+                    } else {
+                        UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+                    }
+                },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
             Icon(Icons.Filled.Chat, contentDescription = null, tint = Color(0xFF3C1E1E), modifier = Modifier.size(20.dp))
             Spacer(Modifier.size(8.dp))
-            Text("카카오계정으로 로그인", color = Color(0xFF3C1E1E), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            Text(
+                if (uiState.isLoading) "로그인 중..." else "카카오계정으로 로그인",
+                color = Color(0xFF3C1E1E),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+            )
         }
     }
 }
