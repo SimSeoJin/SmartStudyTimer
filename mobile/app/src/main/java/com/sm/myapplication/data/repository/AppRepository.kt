@@ -14,6 +14,11 @@ import com.sm.myapplication.network.dto.ErrorResponse
 import com.sm.myapplication.network.dto.JoinRequest
 import com.sm.myapplication.network.dto.KakaoTokenRequest
 import com.sm.myapplication.network.dto.LoginRequest
+import com.sm.myapplication.network.dto.StudyRecordRequest
+import kotlinx.coroutines.flow.first
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class AppRepository(
     val todoDao: TodoDao,
@@ -38,6 +43,24 @@ class AppRepository(
                 dateEpochDay = dateEpochDay,
             )
         )
+        syncStudySessionToServer(start, end)
+    }
+
+    // 로그인 안 한 상태거나 네트워크가 안 되면 조용히 실패 — 로컬 기록(Room)은 이미 저장됐으므로 사용자 경험엔 영향 없음.
+    private suspend fun syncStudySessionToServer(start: Long, end: Long) {
+        val memberId = prefs.memberId.first() ?: return
+        val studyMinutes = Math.round((end - start) / 60000.0).toInt().coerceAtLeast(1)
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        runCatching {
+            ApiClient.studyApi.recordStudy(
+                StudyRecordRequest(
+                    memberId = memberId,
+                    startTime = isoFormat.format(Date(start)),
+                    endTime = isoFormat.format(Date(end)),
+                    studyMinutes = studyMinutes,
+                )
+            )
+        }
     }
 
     fun observeTodaySessionMs(day: Long) = studySessionDao.observeTotalMsByDate(day)

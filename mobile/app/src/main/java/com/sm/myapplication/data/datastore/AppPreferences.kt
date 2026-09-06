@@ -21,6 +21,7 @@ class AppPreferences(private val context: Context) {
     val ddayLabel: Flow<String> = context.dataStore.data.map { it[KEY_DDAY_LABEL] ?: "기말 고사" }
 
     val accessToken: Flow<String?> = context.dataStore.data.map { it[KEY_ACCESS_TOKEN] }
+    val memberId: Flow<Long?> = context.dataStore.data.map { it[KEY_MEMBER_ID] }
 
     suspend fun setDDay(epochDay: Long, label: String) {
         context.dataStore.edit {

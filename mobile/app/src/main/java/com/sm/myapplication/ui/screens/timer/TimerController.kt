@@ -134,12 +134,13 @@ object TimerController {
         tickJob?.cancel()
 
         val sane = elapsed in 1_000L..MAX_SESSION_MS
-        if (sane && sessionStartedAt > 0L) {
-            val end = sessionStartedAt + elapsed
+        val start = sessionStartedAt
+        if (sane && start > 0L) {
+            val end = start + elapsed
             val mode = current.mode
             val day = LocalDate.now().toEpochDay()
             scope.launch {
-                repo.saveStudySession(start = sessionStartedAt, end = end, mode = mode, dateEpochDay = day)
+                repo.saveStudySession(start = start, end = end, mode = mode, dateEpochDay = day)
             }
         }
 
