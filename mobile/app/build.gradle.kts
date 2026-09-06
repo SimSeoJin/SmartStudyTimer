@@ -17,6 +17,11 @@ val localProperties = Properties().apply {
 val kakaoNativeAppKey: String =
     (localProperties.getProperty("KAKAO_NATIVE_APP_KEY") ?: "REPLACE_WITH_KAKAO_NATIVE_APP_KEY")
 
+// 백엔드 서버 주소: local.properties의 API_BASE_URL을 읽음. 에뮬레이터는 10.0.2.2가 호스트 PC를
+// 가리키지만, 실기기는 PC의 실제 LAN IP(같은 Wi-Fi여야 함)를 넣어야 함.
+val apiBaseUrl: String =
+    (localProperties.getProperty("API_BASE_URL") ?: "http://10.0.2.2:8080/")
+
 android {
     namespace = "com.sm.myapplication"
     compileSdk = 35
@@ -30,6 +35,7 @@ android {
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
 
         ndk {
             abiFilters += listOf(

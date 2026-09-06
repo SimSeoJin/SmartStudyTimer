@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 디버그 빌드에서만 로컬 개발 서버(HTTP)로 통신할 수 있도록 평문 트래픽 허용.
+     release 빌드에는 병합되지 않으므로 배포판에는 영향 없음. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true" />
+</manifest>
