@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS `daily_summary`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `daily_summary` (
-  `member_id` int NOT NULL,
+  `member_id` bigint NOT NULL,
   `date` date NOT NULL,
   `daily_total` int NOT NULL,
   `streak` int NOT NULL,
@@ -50,7 +50,7 @@ DROP TABLE IF EXISTS `member`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `member` (
-  `member_id` int NOT NULL AUTO_INCREMENT,
+  `member_id` bigint NOT NULL AUTO_INCREMENT,
   `oauth_provider` varchar(45) DEFAULT NULL,
   `oauth_id` varchar(255) DEFAULT NULL,
   `login_id` varchar(45) DEFAULT NULL,
@@ -98,7 +98,7 @@ DROP TABLE IF EXISTS `study_record`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `study_record` (
   `record_id` int NOT NULL AUTO_INCREMENT,
-  `member_id` int NOT NULL,
+  `member_id` bigint NOT NULL,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
   `study_minutes` int NOT NULL,
@@ -126,7 +126,7 @@ DROP TABLE IF EXISTS `study_summary`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `study_summary` (
-  `member_id` int NOT NULL,
+  `member_id` bigint NOT NULL,
   `current_streak` int NOT NULL DEFAULT '0',
   `max_streak` int NOT NULL DEFAULT '0',
   `total_study_time` int NOT NULL DEFAULT '0',
