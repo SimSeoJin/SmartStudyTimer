@@ -175,6 +175,46 @@ INSERT INTO `tier_meta` VALUES (1,'Diamond',4),(2,'Platinum',15),(3,'Gold',45),(
 UNLOCK TABLES;
 
 --
+-- Table structure for table `todo`  (백엔드 할일 API용 — 앱 Room 의 todos 테이블에 대응)
+--
+
+DROP TABLE IF EXISTS `todo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `todo` (
+  `todo_id` bigint NOT NULL AUTO_INCREMENT,
+  `member_id` bigint NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `category` varchar(20) NOT NULL DEFAULT 'GENERAL',
+  `todo_date` date NOT NULL,
+  `time_minutes` int DEFAULT NULL,
+  `memo` varchar(500) DEFAULT NULL,
+  `is_done` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`todo_id`),
+  KEY `fk_todo_member_idx` (`member_id`),
+  KEY `idx_todo_member_date` (`member_id`,`todo_date`),
+  CONSTRAINT `fk_todo_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `dday`  (회원당 1개)
+--
+
+DROP TABLE IF EXISTS `dday`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `dday` (
+  `member_id` bigint NOT NULL,
+  `target_date` date NOT NULL,
+  `label` varchar(45) NOT NULL,
+  PRIMARY KEY (`member_id`),
+  CONSTRAINT `fk_dday_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Final view structure for view `ranking`
 --
 
