@@ -58,7 +58,8 @@ CREATE TABLE `member` (
   `nickname` varchar(45) NOT NULL,
   PRIMARY KEY (`member_id`),
   UNIQUE KEY `member_id_UNIQUE` (`member_id`),
-  UNIQUE KEY `login_id_UNIQUE` (`login_id`)
+  UNIQUE KEY `login_id_UNIQUE` (`login_id`),
+  UNIQUE KEY `nickname_UNIQUE` (`nickname`)
 ) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
