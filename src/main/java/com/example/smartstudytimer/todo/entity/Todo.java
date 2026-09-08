@@ -29,17 +29,9 @@ public class Todo {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "category", nullable = false, length = 20)
-    private TodoCategory category;
-
     /** 할 일이 걸린 날짜 */
     @Column(name = "todo_date", nullable = false)
     private LocalDate date;
-
-    /** 목표 소요 시간(분). 선택 항목이라 null 가능 */
-    @Column(name = "time_minutes")
-    private Integer timeMinutes;
 
     @Column(name = "memo", length = 500)
     private String memo;

@@ -5,7 +5,6 @@ import com.example.smartstudytimer.member.repository.MemberRepository;
 import com.example.smartstudytimer.todo.controller.dto.TodoRequest;
 import com.example.smartstudytimer.todo.controller.dto.TodoResponse;
 import com.example.smartstudytimer.todo.entity.Todo;
-import com.example.smartstudytimer.todo.entity.TodoCategory;
 import com.example.smartstudytimer.todo.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,9 +44,7 @@ public class TodoServiceImpl implements TodoService {
         Todo todo = Todo.builder()
                 .member(member)
                 .title(request.getTitle().trim())
-                .category(request.getCategory() != null ? request.getCategory() : TodoCategory.GENERAL)
                 .date(request.getDate())
-                .timeMinutes(request.getTimeMinutes())
                 .memo(request.getMemo() != null ? request.getMemo() : "")
                 .done(Boolean.TRUE.equals(request.getDone()))
                 .build();
@@ -57,7 +54,7 @@ public class TodoServiceImpl implements TodoService {
 
     /**
      * 전체 교체(PUT). 앱은 수정 시 할 일 전체를 보내므로 받은 값으로 덮어쓴다.
-     * 단 title/date/category 가 비어 오면(방어적으로) 기존 값을 유지한다.
+     * 단 title/date 가 비어 오면(방어적으로) 기존 값을 유지한다.
      */
     @Override
     @Transactional
@@ -67,13 +64,9 @@ public class TodoServiceImpl implements TodoService {
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             todo.setTitle(request.getTitle().trim());
         }
-        if (request.getCategory() != null) {
-            todo.setCategory(request.getCategory());
-        }
         if (request.getDate() != null) {
             todo.setDate(request.getDate());
         }
-        todo.setTimeMinutes(request.getTimeMinutes());          // null 이면 "목표 시간 없음"
         todo.setMemo(request.getMemo() != null ? request.getMemo() : "");
         todo.setDone(Boolean.TRUE.equals(request.getDone()));
 
@@ -104,9 +97,7 @@ public class TodoServiceImpl implements TodoService {
         return TodoResponse.builder()
                 .todoId(todo.getTodoId())
                 .title(todo.getTitle())
-                .category(todo.getCategory())
                 .date(todo.getDate())
-                .timeMinutes(todo.getTimeMinutes())
                 .memo(todo.getMemo())
                 .done(todo.isDone())
                 .createdAt(todo.getCreatedAt())
