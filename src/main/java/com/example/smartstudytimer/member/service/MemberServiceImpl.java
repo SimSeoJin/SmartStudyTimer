@@ -1,6 +1,7 @@
 package com.example.smartstudytimer.member.service;
 
 import com.example.smartstudytimer.member.Entity.Member;
+import com.example.smartstudytimer.member.controller.dto.MemberInfoResponse;
 import com.example.smartstudytimer.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -68,6 +69,44 @@ public class MemberServiceImpl implements MemberService {
 
                     return memberRepository.saveAndFlush(newMember);
                 });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MemberInfoResponse getMemberInfo(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+        return toInfoResponse(member);
+    }
+
+    @Override
+    @Transactional
+    public MemberInfoResponse updateMember(Long memberId, String nickname, String phoneNumber) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        if (nickname != null && !nickname.isBlank() && !nickname.trim().equals(member.getName())) {
+            if (memberRepository.existsByName(nickname.trim())) {
+                throw new IllegalStateException("이미 사용 중인 닉네임입니다.");
+            }
+            member.setName(nickname.trim());
+        }
+        if (phoneNumber != null) {
+            member.setPhoneNumber(phoneNumber.isBlank() ? null : phoneNumber.trim());
+        }
+
+        // @Transactional 안이라 dirty checking으로 flush 시점에 UPDATE 반영됨.
+        return toInfoResponse(member);
+    }
+
+    private MemberInfoResponse toInfoResponse(Member member) {
+        return MemberInfoResponse.builder()
+                .memberId(member.getMemberId())
+                .nickname(member.getName())
+                .loginId(member.getId())
+                .phoneNumber(member.getPhoneNumber())
+                .oauthProvider(member.getOauthProvider())
+                .build();
     }
 
     // 카카오에서 받아온 닉네임이 이미 다른 회원이 쓰고 있으면 그대로 저장 시 nickname UNIQUE 제약에 걸려
