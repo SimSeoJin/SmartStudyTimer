@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,14 +12,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,21 +29,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sm.myapplication.data.entity.StudyMode
 import com.sm.myapplication.data.repository.AppRepository
+import com.sm.myapplication.ui.components.NavBar
+import com.sm.myapplication.ui.components.StatusPill
+import com.sm.myapplication.ui.components.pressable
+import com.sm.myapplication.ui.screens.timer.ResponsiveTimerText
 import com.sm.myapplication.ui.screens.timer.TimerController
-import com.sm.myapplication.ui.theme.BgGreenLight
-import com.sm.myapplication.ui.theme.BgGreenTint
-import com.sm.myapplication.ui.theme.Black50
-import com.sm.myapplication.ui.theme.Gray
-import com.sm.myapplication.ui.theme.PureModeBg
+import com.sm.myapplication.ui.screens.timer.TimerPauseCause
+import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.DarkStatusBarEffect
+import com.sm.myapplication.ui.theme.FocusBg
+import com.sm.myapplication.ui.theme.FocusCameraBottom
+import com.sm.myapplication.ui.theme.FocusCameraTop
+import com.sm.myapplication.ui.theme.FocusGreen
+import com.sm.myapplication.ui.theme.FocusRed
+import com.sm.myapplication.ui.theme.FocusSurface
+import com.sm.myapplication.ui.theme.LabelSecondary
 
 @Composable
 fun PureModeScreen(onBack: () -> Unit) {
@@ -54,6 +60,8 @@ fun PureModeScreen(onBack: () -> Unit) {
     var cameraOn by remember { mutableStateOf(true) }
     var screenCovered by remember { mutableStateOf(false) }
 
+    DarkStatusBarEffect()
+
     LaunchedEffect(Unit) {
         if (!state.isRunning && state.elapsedMs == 0L) {
             TimerController.start(StudyMode.PURE, autoRun = false)
@@ -61,11 +69,7 @@ fun PureModeScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(cameraOn) {
-        if (cameraOn) {
-            TimerController.onCameraOn()
-        } else {
-            TimerController.onCameraOff()
-        }
+        if (cameraOn) TimerController.onCameraOn() else TimerController.onCameraOff()
     }
 
     val finish: () -> Unit = {
@@ -75,162 +79,164 @@ fun PureModeScreen(onBack: () -> Unit) {
     BackHandler(onBack = finish)
 
     if (screenCovered) {
-        // pure_mode_screenoff
         ScreenCoveredOverlay(onTap = { screenCovered = false })
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 140.dp)
-        ) {
-            // 헤더 + "순공모드" 타이틀
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(FocusBg)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
+    ) {
+        NavBar(
+            title = "순공모드",
+            titleColor = CardWhite,
+            // TODO(서버 연동): 순위는 랭킹 API 연결 전까지 표시용 값
+            actionLabel = "55위",
+            actionColor = FocusGreen,
+            onAction = {},
+        )
+
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            StatusPill(
+                text = pureModeStatusLabel(state.isRunning, state.pauseCause),
+                dark = true,
+                active = state.isRunning,
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        if (cameraOn) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(78.dp)
-                    .background(BgGreenLight),
-                contentAlignment = Alignment.Center,
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Brush.linearGradient(listOf(FocusCameraTop, FocusCameraBottom)))
+                    .border(0.5.dp, CardWhite.copy(alpha = 0.14f), RoundedCornerShape(22.dp)),
             ) {
-                Text(
-                    "순공모드",
-                    color = Black50,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
+                FrontCameraPreview(modifier = Modifier.fillMaxSize())
 
-            if (cameraOn) {
-                Spacer(Modifier.height(14.dp))
-
-                // 카메라 박스: 고정 520dp 대신 남은 공간에 맞게 자동 조절
+                // 얼굴을 맞출 위치를 알려주는 가이드 링
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Gray)
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    FrontCameraPreview(modifier = Modifier.fillMaxSize())
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                // 카메라 아래에 타이머를 항상 표시
-                TimerLine(elapsedMs = state.elapsedMs)
-
-                Spacer(Modifier.height(12.dp))
-            } else {
-                // camoff
-                Spacer(Modifier.height(28.dp))
-                TimerLine(elapsedMs = state.elapsedMs, big = true)
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    "나의 순위는 현재 55위 입니다.",
-                    color = Black50,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                        .align(Alignment.Center)
+                        .size(width = 150.dp, height = 195.dp)
+                        .border(
+                            width = 1.5.dp,
+                            color = if (state.isRunning) FocusGreen.copy(alpha = 0.75f) else CardWhite.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(percent = 48),
+                        )
                 )
             }
+        } else {
+            Spacer(Modifier.weight(1f))
         }
 
-        // 하단 종료 + 보조 버튼들
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // 순공모드 종료 버튼 (가운데에 일시정지 ‖)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(BgGreenTint)
-                    .clickable(onClick = finish)
-                    .padding(vertical = 14.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = if (state.isRunning) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = null,
-                    tint = Black50,
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("순공모드 종료", color = Black50, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-            }
+        Spacer(Modifier.height(18.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(
+        ResponsiveTimerText(
+            text = formatElapsedDigits(state.elapsedMs),
+            maxFontSize = if (cameraOn) 48f else 56f,
+            minFontSize = 28f,
+            color = CardWhite,
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = "✋ 손바닥 = 시작 · ✊ 주먹 = 일시정지",
+            style = MaterialTheme.typography.bodySmall,
+            color = LabelSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        if (!cameraOn) Spacer(Modifier.weight(1f))
+
+        Column(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DarkPillButton(
                     label = if (cameraOn) "카메라 끄기" else "카메라 켜기",
                     modifier = Modifier.weight(1f),
                     onClick = { cameraOn = !cameraOn },
                 )
-                PillButton(
+                DarkPillButton(
                     label = "화면 가리기",
                     modifier = Modifier.weight(1f),
                     onClick = { screenCovered = true },
                 )
             }
+            DarkPillButton(
+                label = "순공모드 종료",
+                destructive = true,
+                modifier = Modifier.fillMaxWidth(),
+                onClick = finish,
+            )
         }
     }
 }
 
 @Composable
-private fun TimerLine(elapsedMs: Long, big: Boolean = false) {
-    Text(
-        text = formatElapsedDigits(elapsedMs),
-        fontFamily = FontFamily.Monospace,
-        fontSize = if (big) 56.sp else 40.sp,
-        color = Color.Black,
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-    )
-}
-
-@Composable
-private fun PillButton(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun DarkPillButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    destructive: Boolean = false,
+    onClick: () -> Unit,
+) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(32.dp))
-            .background(BgGreenTint)
-            .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(32.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
+            .height(48.dp)
+            .clip(CircleShape)
+            .background(if (destructive) FocusRed.copy(alpha = 0.16f) else FocusSurface)
+            .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = Black50, fontWeight = FontWeight.Medium, fontSize = 15.sp)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            color = if (destructive) FocusRed else CardWhite,
+        )
     }
 }
 
 @Composable
 private fun ScreenCoveredOverlay(onTap: () -> Unit) {
+    DarkStatusBarEffect()
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PureModeBg)
-            .clickable(onClick = onTap),
+            .background(FocusBg)
+            .pressable(onClick = onTap),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "화면을 터치하면 이전화면으로 돌아갑니다",
-            color = Color.White.copy(alpha = 0.21f),
-            fontSize = 16.sp,
+            text = "화면을 터치하면 돌아갑니다",
+            style = MaterialTheme.typography.bodyLarge,
+            color = CardWhite.copy(alpha = 0.22f),
         )
     }
 }
 
+/** TimerController의 내부 상태를 화면에 보여줄 짧은 문구로 옮긴다. */
+private fun pureModeStatusLabel(running: Boolean, cause: TimerPauseCause): String = when {
+    running -> "공부 중 · 자동 기록"
+    cause == TimerPauseCause.WAITING_FACE -> "얼굴 감지 대기 중"
+    cause == TimerPauseCause.AUTO_FACE_LOST -> "자리 비움 · 일시정지"
+    cause == TimerPauseCause.MANUAL_GESTURE -> "일시정지 · 손바닥을 펴면 재개"
+    cause == TimerPauseCause.CAMERA_OFF -> "카메라 꺼짐 · 일시정지"
+    cause == TimerPauseCause.USER -> "일시정지"
+    else -> "준비 중"
+}
+
 private fun formatElapsedDigits(ms: Long): String {
-    val totalSec = ms / 1000
-    val h = totalSec / 3600
-    val m = (totalSec / 60) % 60
-    val s = totalSec % 60
-    return "%02d : %02d : %02d".format(h, m, s)
+    val totalSec = (ms / 1000).coerceAtLeast(0)
+    return "%02d:%02d:%02d".format(totalSec / 3600, (totalSec / 60) % 60, totalSec % 60)
 }

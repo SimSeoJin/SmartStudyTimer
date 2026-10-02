@@ -1,8 +1,6 @@
 package com.sm.myapplication.ui.screens.todo
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,29 +9,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Article
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.rounded.Article
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,21 +38,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sm.myapplication.data.entity.TodoCategory
 import com.sm.myapplication.data.entity.TodoEntity
-import com.sm.myapplication.ui.theme.BgGreenLight
-import com.sm.myapplication.ui.theme.BgGray
-import com.sm.myapplication.ui.theme.Black50
-import com.sm.myapplication.ui.theme.Gray
-import com.sm.myapplication.ui.theme.GreenPrimary
+import com.sm.myapplication.ui.components.InsetCard
+import com.sm.myapplication.ui.components.LargeTitle
+import com.sm.myapplication.ui.components.NavBar
+import com.sm.myapplication.ui.components.PrimaryButton
+import com.sm.myapplication.ui.components.RoundCheck
+import com.sm.myapplication.ui.components.RowDivider
+import com.sm.myapplication.ui.components.SectionHeader
+import com.sm.myapplication.ui.components.pressable
+import com.sm.myapplication.ui.screens.home.formatClock
+import com.sm.myapplication.ui.theme.AccentGreen
+import com.sm.myapplication.ui.theme.AccentInk
+import com.sm.myapplication.ui.theme.AccentTint
+import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.GroupedBg
+import com.sm.myapplication.ui.theme.LabelPrimary
+import com.sm.myapplication.ui.theme.LabelSecondary
+import com.sm.myapplication.ui.theme.LabelTertiary
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun TodoListScreen(
@@ -67,95 +74,67 @@ fun TodoListScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dateText = remember(state.today) {
-        state.today.format(DateTimeFormatter.ofPattern("yyyy년 M월 d일"))
+        state.today.format(DateTimeFormatter.ofPattern("M월 d일 EEEE", Locale.KOREAN))
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            // 헤더 (#F0F7E7, 222dp)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .background(BgGreenLight),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, start = 16.dp, end = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    CircleIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
-                    Spacer(Modifier.weight(1f))
-                    Text(dateText, color = Black50, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                    Spacer(Modifier.weight(1f))
-                    Spacer(Modifier.size(48.dp))
-                }
-                Text(
-                    "오늘의 할 일",
-                    color = Black50,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // 미완료 섹션
-            if (state.activeTodos.isNotEmpty()) {
-                TodoSection(items = state.activeTodos, onToggle = viewModel::toggle)
-                Spacer(Modifier.height(16.dp))
-            }
-            // 완료 섹션
-            if (state.completedTodos.isNotEmpty()) {
-                TodoSection(items = state.completedTodos, onToggle = viewModel::toggle)
-                Spacer(Modifier.height(16.dp))
-            }
-
-            if (state.activeTodos.isEmpty() && state.completedTodos.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("아직 할 일이 없어요.\n+ 추가 버튼으로 시작하세요.", color = Black50, fontSize = 14.sp)
-                }
-            }
-
-            Spacer(Modifier.height(120.dp))
-        }
-
-        // 하단 "추가" 버튼
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-                .height(56.dp)
-                .clip(RoundedCornerShape(50))
-                .background(GreenPrimary)
-                .clickable(onClick = onAdd),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("추가", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-        }
-    }
-}
-
-@Composable
-private fun TodoSection(items: List<TodoEntity>, onToggle: (TodoEntity) -> Unit) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFE4E8EC))
-            .padding(1.dp),
+            .fillMaxSize()
+            .background(GroupedBg)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
     ) {
-        items.forEachIndexed { index, todo ->
-            TodoRow(todo, onToggle = { onToggle(todo) })
-            if (index != items.lastIndex) {
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFE4E8EC)))
+        NavBar(onBack = onBack, backLabel = "홈")
+
+        Box(Modifier.weight(1f)) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                LargeTitle(title = "오늘의 할 일", caption = dateText)
+
+                if (state.activeTodos.isEmpty() && state.completedTodos.isEmpty()) {
+                    Spacer(Modifier.height(40.dp))
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text("아직 할 일이 없어요", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "아래 버튼으로 오늘 할 일을 추가해 보세요.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = LabelSecondary,
+                        )
+                    }
+                }
+
+                if (state.activeTodos.isNotEmpty()) {
+                    SectionHeader("진행 중 · ${state.activeTodos.size}")
+                    InsetCard {
+                        state.activeTodos.forEachIndexed { index, todo ->
+                            TodoRow(todo) { viewModel.toggle(todo) }
+                            if (index != state.activeTodos.lastIndex) RowDivider(inset = 48.dp)
+                        }
+                    }
+                }
+
+                if (state.completedTodos.isNotEmpty()) {
+                    SectionHeader("완료 · ${state.completedTodos.size}")
+                    InsetCard {
+                        state.completedTodos.forEachIndexed { index, todo ->
+                            TodoRow(todo) { viewModel.toggle(todo) }
+                            if (index != state.completedTodos.lastIndex) RowDivider(inset = 48.dp)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
             }
         }
+
+        PrimaryButton(
+            text = "＋  새로운 할 일",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+            onClick = onAdd,
+        )
     }
 }
 
@@ -164,84 +143,50 @@ private fun TodoRow(todo: TodoEntity, onToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .pressable(onClick = onToggle)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 카테고리 원형
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(BgGreenLight),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = categoryIcon(todo.category),
-                contentDescription = null,
-                tint = GreenPrimary,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-
-        Spacer(Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
+        RoundCheck(checked = todo.isDone)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
             Text(
                 text = todo.title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF1B1A1C),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (todo.isDone) LabelSecondary else LabelPrimary,
                 textDecoration = if (todo.isDone) TextDecoration.LineThrough else TextDecoration.None,
             )
-            todo.timeMinutes?.let { mins ->
-                val h = mins / 60
-                val m = mins % 60
-                val ampm = if (h < 12) "am" else "pm"
-                val h12 = if (h % 12 == 0) 12 else h % 12
-                Text(
-                    text = "%d:%02d%s".format(h12, m, ampm),
-                    fontSize = 13.sp,
-                    color = Color(0xFF8E8E93),
-                )
+            if (todo.memo.isNotBlank()) {
+                Text(todo.memo, style = MaterialTheme.typography.bodySmall, color = LabelSecondary)
             }
         }
-
-        // Checkbox
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(if (todo.isDone) GreenPrimary else Color.White)
-                .border(1.5.dp, if (todo.isDone) GreenPrimary else Gray, RoundedCornerShape(3.dp))
-                .clickable(onClick = onToggle),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (todo.isDone) {
-                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        if (todo.category != TodoCategory.GENERAL) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(AccentTint)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            ) {
+                Text(categoryLabel(todo.category), style = MaterialTheme.typography.labelSmall, color = AccentInk)
             }
+            Spacer(Modifier.width(8.dp))
+        }
+        todo.timeMinutes?.let {
+            Text(formatClock(it), style = MaterialTheme.typography.bodySmall, color = LabelTertiary)
         }
     }
 }
 
-@Composable
-private fun CircleIconButton(icon: ImageVector, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(Color.White)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = Black50, modifier = Modifier.size(22.dp))
-    }
+internal fun categoryLabel(category: TodoCategory): String = when (category) {
+    TodoCategory.GENERAL -> "일반"
+    TodoCategory.EXAM -> "시험"
+    TodoCategory.CERT -> "자격증"
 }
 
-private fun categoryIcon(category: TodoCategory): ImageVector = when (category) {
-    TodoCategory.GENERAL -> Icons.Outlined.Article
-    TodoCategory.EXAM -> Icons.Outlined.CalendarToday
-    TodoCategory.CERT -> Icons.Outlined.EmojiEvents
+internal fun categoryIcon(category: TodoCategory): ImageVector = when (category) {
+    TodoCategory.GENERAL -> Icons.Rounded.Article
+    TodoCategory.EXAM -> Icons.Rounded.CalendarToday
+    TodoCategory.CERT -> Icons.Rounded.WorkspacePremium
 }
 
 @Composable
@@ -255,161 +200,133 @@ fun TodoAddScreen(
     var timeText by remember { mutableStateOf("") }
     var memo by remember { mutableStateOf("") }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            // 헤더 (#F0F7E7, 96dp)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .background(BgGreenLight),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, start = 16.dp, end = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    CircleIconButton(icon = Icons.Filled.Close, onClick = onBack)
-                    Spacer(Modifier.weight(1f))
-                    Text("일정 추가", color = Black50, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                    Spacer(Modifier.weight(1f))
-                    Spacer(Modifier.size(40.dp))
-                }
+    val save = {
+        val day = runCatching {
+            LocalDate.parse(dateText, DateTimeFormatter.ofPattern("yyyy/MM/dd")).toEpochDay()
+        }.getOrDefault(LocalDate.now().toEpochDay())
+        viewModel.save(title, category, day, parseTimeMinutes(timeText), memo, onDone = onBack)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(GroupedBg)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .imePadding(),
+    ) {
+        NavBar(
+            title = "새로운 할 일",
+            onBack = onBack,
+            backLabel = "취소",
+            actionLabel = "저장",
+            actionEnabled = title.isNotBlank(),
+            onAction = save,
+        )
+
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            SectionHeader("할 일")
+            InsetCard {
+                FieldRow(label = "이름", value = title, placeholder = "무엇을 할까요?") { title = it }
+                RowDivider(inset = 16.dp)
+                FieldRow(label = "메모", value = memo, placeholder = "선택 입력") { memo = it }
             }
 
-            Spacer(Modifier.height(20.dp))
-
-            // 일정 이름
-            FieldLabel("일정 이름")
-            TextInput(value = title, placeholder = "Plan Name", onValueChange = { title = it })
-
-            Spacer(Modifier.height(20.dp))
-
-            // 분류
-            FieldLabel("분류")
+            SectionHeader("분류")
             Row(
-                modifier = Modifier.padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                CategoryChip(TodoCategory.GENERAL, selected = category == TodoCategory.GENERAL) { category = TodoCategory.GENERAL }
-                CategoryChip(TodoCategory.EXAM, selected = category == TodoCategory.EXAM) { category = TodoCategory.EXAM }
-                CategoryChip(TodoCategory.CERT, selected = category == TodoCategory.CERT) { category = TodoCategory.CERT }
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            // 날짜 + 시간 (좌우 분할)
-            Row(
-                modifier = Modifier.padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("날짜", color = Black50, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 6.dp))
-                    TextInputBox(value = dateText, placeholder = "YYYY/MM/DD", trailingIcon = Icons.Filled.CalendarMonth) { dateText = it }
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("시간", color = Black50, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 6.dp))
-                    TextInputBox(value = timeText, placeholder = "Time", trailingIcon = Icons.Filled.AccessTime) { timeText = it }
+                TodoCategory.entries.forEach { c ->
+                    CategoryChip(
+                        category = c,
+                        selected = category == c,
+                        modifier = Modifier.weight(1f),
+                    ) { category = c }
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            SectionHeader("일시")
+            InsetCard {
+                FieldRow(label = "날짜", value = dateText, placeholder = "YYYY/MM/DD", numeric = true) { dateText = it }
+                RowDivider(inset = 16.dp)
+                FieldRow(label = "시간", value = timeText, placeholder = "예: 19:00", numeric = true) { timeText = it }
+            }
 
-            // 메모
-            FieldLabel("메모")
-            TextInput(value = memo, placeholder = "Notes", onValueChange = { memo = it })
-
-            Spacer(Modifier.height(120.dp))
-        }
-
-        // 저장 버튼
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-                .height(56.dp)
-                .clip(RoundedCornerShape(50))
-                .background(GreenPrimary)
-                .clickable {
-                    val day = runCatching {
-                        LocalDate.parse(dateText, DateTimeFormatter.ofPattern("yyyy/MM/dd")).toEpochDay()
-                    }.getOrDefault(LocalDate.now().toEpochDay())
-                    val minutes = parseTimeMinutes(timeText)
-                    viewModel.save(title, category, day, minutes, memo, onDone = onBack)
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("저장", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+            Spacer(Modifier.height(24.dp))
+            PrimaryButton(
+                text = "저장",
+                enabled = title.isNotBlank(),
+                modifier = Modifier.padding(horizontal = 16.dp),
+                onClick = save,
+            )
+            Spacer(Modifier.height(28.dp))
         }
     }
 }
 
 @Composable
-private fun FieldLabel(text: String) {
-    Text(
-        text = text,
-        color = Black50,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
-    )
-}
-
-@Composable
-private fun TextInput(value: String, placeholder: String, onValueChange: (String) -> Unit) {
-    TextInputBox(value = value, placeholder = placeholder, trailingIcon = Icons.Filled.MoreVert, onValueChange = onValueChange)
-}
-
-@Composable
-private fun TextInputBox(
+private fun FieldRow(
+    label: String,
     value: String,
     placeholder: String,
-    trailingIcon: ImageVector,
+    numeric: Boolean = false,
     onValueChange: (String) -> Unit,
 ) {
-    Box(
+    Row(
         modifier = Modifier
-            .padding(horizontal = 24.dp)
             .fillMaxWidth()
-            .height(52.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(BgGray)
-            .padding(horizontal = 14.dp),
-        contentAlignment = Alignment.CenterStart,
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (value.isEmpty()) {
-            Text(placeholder, color = Color(0xFF9E9E9E), fontSize = 15.sp)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = LabelPrimary,
+            modifier = Modifier.width(64.dp),
+        )
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            if (value.isEmpty()) {
+                Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = LabelTertiary)
+            }
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LabelPrimary),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().padding(end = 28.dp),
-            singleLine = true,
-        )
-        Icon(
-            imageVector = trailingIcon,
-            contentDescription = null,
-            tint = Color(0xFFBDBDBD),
-            modifier = Modifier.size(18.dp).align(Alignment.CenterEnd),
-        )
     }
 }
 
 @Composable
-private fun CategoryChip(category: TodoCategory, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .background(if (selected) GreenPrimary else BgGreenLight)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
+private fun CategoryChip(
+    category: TodoCategory,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (selected) AccentGreen else CardWhite)
+            .pressable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
             imageVector = categoryIcon(category),
-            contentDescription = category.name,
-            tint = if (selected) Color.White else GreenPrimary,
-            modifier = Modifier.size(22.dp),
+            contentDescription = null,
+            tint = if (selected) CardWhite else AccentInk,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.height(5.dp))
+        Text(
+            categoryLabel(category),
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) CardWhite else LabelSecondary,
         )
     }
 }

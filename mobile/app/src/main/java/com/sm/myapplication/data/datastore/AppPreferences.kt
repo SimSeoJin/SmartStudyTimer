@@ -16,12 +16,21 @@ class AppPreferences(private val context: Context) {
     private val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token")
     private val KEY_MEMBER_ID = longPreferencesKey("member_id")
     private val KEY_MEMBER_NAME = stringPreferencesKey("member_name")
+    private val KEY_BIRTH_DATE = stringPreferencesKey("birth_date")
+    private val KEY_EMAIL = stringPreferencesKey("email")
+    private val KEY_EDUCATION = stringPreferencesKey("education")
+    private val KEY_NOTIFICATIONS_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("notifications_enabled")
 
     val ddayEpochDay: Flow<Long?> = context.dataStore.data.map { it[KEY_DDAY_EPOCH] }
     val ddayLabel: Flow<String> = context.dataStore.data.map { it[KEY_DDAY_LABEL] ?: "기말 고사" }
 
     val accessToken: Flow<String?> = context.dataStore.data.map { it[KEY_ACCESS_TOKEN] }
     val memberId: Flow<Long?> = context.dataStore.data.map { it[KEY_MEMBER_ID] }
+    val memberName: Flow<String> = context.dataStore.data.map { it[KEY_MEMBER_NAME] ?: "" }
+    val birthDate: Flow<String> = context.dataStore.data.map { it[KEY_BIRTH_DATE] ?: "" }
+    val email: Flow<String> = context.dataStore.data.map { it[KEY_EMAIL] ?: "" }
+    val education: Flow<String> = context.dataStore.data.map { it[KEY_EDUCATION] ?: "중학생" }
+    val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { it[KEY_NOTIFICATIONS_ENABLED] ?: false }
 
     suspend fun setDDay(epochDay: Long, label: String) {
         context.dataStore.edit {
@@ -36,6 +45,19 @@ class AppPreferences(private val context: Context) {
             it[KEY_MEMBER_ID] = memberId
             it[KEY_MEMBER_NAME] = name
         }
+    }
+
+    suspend fun saveProfile(name: String, birthDate: String, email: String, education: String) {
+        context.dataStore.edit {
+            it[KEY_MEMBER_NAME] = name
+            it[KEY_BIRTH_DATE] = birthDate
+            it[KEY_EMAIL] = email
+            it[KEY_EDUCATION] = education
+        }
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[KEY_NOTIFICATIONS_ENABLED] = enabled }
     }
 
     suspend fun clearSession() {
