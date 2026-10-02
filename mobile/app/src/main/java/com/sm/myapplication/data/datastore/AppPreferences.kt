@@ -19,7 +19,9 @@ class AppPreferences(private val context: Context) {
     private val KEY_BIRTH_DATE = stringPreferencesKey("birth_date")
     private val KEY_EMAIL = stringPreferencesKey("email")
     private val KEY_EDUCATION = stringPreferencesKey("education")
-    private val KEY_NOTIFICATIONS_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("notifications_enabled")
+    // 폰에 남아 있는 Todo/D-Day가 어느 회원 것인지. 다른 계정으로 로그인하면 이전 데이터를 비우는 데 쓴다.
+    private val KEY_DATA_OWNER_ID = longPreferencesKey("data_owner_id")
+    private val KEY_NOTIFICATIONS_ENABLED =androidx.datastore.preferences.core.booleanPreferencesKey("notifications_enabled")
 
     val ddayEpochDay: Flow<Long?> = context.dataStore.data.map { it[KEY_DDAY_EPOCH] }
     val ddayLabel: Flow<String> = context.dataStore.data.map { it[KEY_DDAY_LABEL] ?: "기말 고사" }
@@ -36,6 +38,19 @@ class AppPreferences(private val context: Context) {
         context.dataStore.edit {
             it[KEY_DDAY_EPOCH] = epochDay
             it[KEY_DDAY_LABEL] = label
+        }
+    }
+
+    val dataOwnerId: Flow<Long?> = context.dataStore.data.map { it[KEY_DATA_OWNER_ID] }
+
+    suspend fun setDataOwnerId(memberId: Long) {
+        context.dataStore.edit { it[KEY_DATA_OWNER_ID] = memberId }
+    }
+
+    suspend fun clearDDay() {
+        context.dataStore.edit {
+            it.remove(KEY_DDAY_EPOCH)
+            it.remove(KEY_DDAY_LABEL)
         }
     }
 

@@ -9,6 +9,5 @@ public class MemberInfoResponse {
     private Long memberId;
     private String nickname;
     private String loginId;
-    private String phoneNumber;
     private String oauthProvider;
 }

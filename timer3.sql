@@ -25,7 +25,7 @@ DROP TABLE IF EXISTS `daily_summary`;
 CREATE TABLE `daily_summary` (
   `member_id` bigint NOT NULL,
   `date` date NOT NULL,
-  `daily_total` int NOT NULL,
+  `daily_total` int NOT NULL COMMENT '초 단위',
   `streak` int NOT NULL,
   PRIMARY KEY (`member_id`,`date`),
   CONSTRAINT `fk_dsummary_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE
@@ -38,7 +38,7 @@ CREATE TABLE `daily_summary` (
 
 LOCK TABLES `daily_summary` WRITE;
 /*!40000 ALTER TABLE `daily_summary` DISABLE KEYS */;
-INSERT INTO `daily_summary` VALUES (101,'2026-01-01',90,1),(101,'2026-01-13',20,1);
+INSERT INTO `daily_summary` VALUES (101,'2026-01-01',5400,1),(101,'2026-01-13',1200,1);
 /*!40000 ALTER TABLE `daily_summary` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -102,7 +102,7 @@ CREATE TABLE `study_record` (
   `member_id` bigint NOT NULL,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
-  `study_minutes` int NOT NULL,
+  `study_seconds` int NOT NULL COMMENT '초 단위',
   PRIMARY KEY (`record_id`),
   KEY `fk_study_record_member_idx` (`member_id`),
   CONSTRAINT `fk_study_record_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE
@@ -115,7 +115,7 @@ CREATE TABLE `study_record` (
 
 LOCK TABLES `study_record` WRITE;
 /*!40000 ALTER TABLE `study_record` DISABLE KEYS */;
-INSERT INTO `study_record` VALUES (1,101,'2026-01-01 09:00:00','2026-01-01 10:30:00',60),(2,101,'2026-01-01 12:00:00','2026-01-01 12:30:00',30),(3,101,'2026-01-13 17:00:00','2026-01-13 17:20:00',20);
+INSERT INTO `study_record` VALUES (1,101,'2026-01-01 09:00:00','2026-01-01 10:30:00',3600),(2,101,'2026-01-01 12:00:00','2026-01-01 12:30:00',1800),(3,101,'2026-01-13 17:00:00','2026-01-13 17:20:00',1200);
 /*!40000 ALTER TABLE `study_record` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -130,7 +130,7 @@ CREATE TABLE `study_summary` (
   `member_id` bigint NOT NULL,
   `current_streak` int NOT NULL DEFAULT '0',
   `max_streak` int NOT NULL DEFAULT '0',
-  `total_study_time` int NOT NULL DEFAULT '0',
+  `total_study_time` int NOT NULL DEFAULT '0' COMMENT '초 단위',
   `total_study_days` int NOT NULL DEFAULT '0',
   `last_study_date` date DEFAULT NULL,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -146,7 +146,7 @@ CREATE TABLE `study_summary` (
 
 LOCK TABLES `study_summary` WRITE;
 /*!40000 ALTER TABLE `study_summary` DISABLE KEYS */;
-INSERT INTO `study_summary` VALUES (101,0,1,110,2,'2026-01-13','2026-02-01 12:00:00');
+INSERT INTO `study_summary` VALUES (101,0,1,6600,2,'2026-01-13','2026-02-01 12:00:00');
 /*!40000 ALTER TABLE `study_summary` ENABLE KEYS */;
 UNLOCK TABLES;
 

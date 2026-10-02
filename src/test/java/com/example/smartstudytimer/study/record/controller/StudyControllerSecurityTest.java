@@ -48,7 +48,7 @@ class StudyControllerSecurityTest {
         when(studyService.recordStudy(any())).thenReturn("success");
 
         String body = """
-                {"memberId":999,"startTime":"%s","endTime":"%s","studyMinutes":30}
+                {"memberId":999,"startTime":"%s","endTime":"%s"}
                 """.formatted(LocalDateTime.now().minusMinutes(30), LocalDateTime.now());
 
         mockMvc.perform(post("/study/record")

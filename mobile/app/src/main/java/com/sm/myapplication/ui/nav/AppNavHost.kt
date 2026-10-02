@@ -23,6 +23,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sm.myapplication.data.datastore.AppPreferences
 import com.sm.myapplication.data.repository.AppRepository
+import com.sm.myapplication.network.ApiClient
+import com.sm.myapplication.network.JwtUtils
 import com.sm.myapplication.ui.screens.calendar.CalendarScreen
 import com.sm.myapplication.ui.screens.dday.DDayDialog
 import com.sm.myapplication.ui.screens.home.MainHomeScreen
@@ -43,10 +45,44 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+
+    // 저장된 토큰이 살아있으면 로그인 화면을 건너뛴다. 읽기 전에는 null이라 NavHost를 만들지 않는다(로그인 화면 깜빡임 방지).
+    var startDestination by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        val repo = AppRepository.get(context.applicationContext)
+        val token = repo.accessToken.first()
+        startDestination = if (JwtUtils.isNotExpired(token)) {
+            // 로그인된 상태로 앱을 켜면 서버와 Todo/D-Day를 맞춘다(백그라운드).
+            repo.syncInBackground()
+            Route.HOME
+        } else {
+            // 만료된 토큰이 남아 있으면 같이 정리한다.
+            if (token != null) repo.logout()
+            Route.LOGIN
+        }
+    }
+
+    // 토큰을 붙였는데 서버가 401로 거절하면(서명 불일치/서버 초기화 등) 세션을 정리하고 로그인 화면으로 보낸다.
+    LaunchedEffect(startDestination) {
+        if (startDestination == null) return@LaunchedEffect
+        ApiClient.unauthorized.collect {
+            if (navController.currentDestination?.route != Route.LOGIN) {
+                AppRepository.get(context.applicationContext).logout()
+                navController.navigate(Route.LOGIN) { popUpTo(0) }
+            }
+        }
+    }
+
+    val start = startDestination
+    if (start == null) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+        return
+    }
 
     NavHost(
         navController = navController,
-        startDestination = Route.LOGIN
+        startDestination = start
     ) {
         composable(Route.LOGIN) {
             LoginScreen(
