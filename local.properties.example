@@ -1,0 +1,11 @@
+# 로컬 개발 환경 설정 (git에 커밋되지 않음 - local.properties로 복사 후 사용)
+# Copy this file to local.properties and fill in your own values
+
+# 카카오 네이티브 앱 키
+# Kakao Developers(https://developers.kakao.com/)에서 앱 등록 후 발급받은 네이티브 앱 키
+KAKAO_NATIVE_APP_KEY=your_kakao_native_app_key_here
+
+# 백엔드 API 서버 주소
+# - 에뮬레이터: http://10.0.2.2:8080/ (에뮬레이터가 호스트 PC를 가리킴)
+# - 실기기: http://[PC_LAN_IP]:8080/ (같은 Wi-Fi 네트워크 필요)
+API_BASE_URL=http://10.0.2.2:8080/

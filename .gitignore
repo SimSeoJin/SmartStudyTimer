@@ -171,4 +171,7 @@ gradle-app.setting
 build/
 .idea/
 
+# Local configuration (API keys, credentials)
+local.properties
+
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij,gradle
