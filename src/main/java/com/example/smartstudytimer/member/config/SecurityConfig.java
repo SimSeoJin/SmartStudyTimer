@@ -20,7 +20,7 @@ public class SecurityConfig {
     // 로그인 전 단계라 토큰이 없는 엔드포인트만 예외로 둔다.
     private static final String[] PUBLIC_PATHS = {
             "/hello", "/join", "/login",
-            "/login/oauth2/code/kakao", "/auth/kakao"
+            "/login/oauth2/code/kakao", "/auth/kakao", "/auth/dev-login"
     };
 
     private final JwtProvider jwtProvider;
