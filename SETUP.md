@@ -60,37 +60,124 @@ KAKAO_NATIVE_APP_KEY=your_native_app_key_here
 API_BASE_URL=http://10.0.2.2:8080/
 ```
 
-## 3. 백엔드 실행
+## 3. MySQL 실행 (개발 모드 사용하지 않을 때만)
+
+개발 모드(`DEV_MODE=true`)를 사용하면 MySQL이 없어도 됩니다.
+
+**MySQL이 필요할 경우:**
+```bash
+# Windows
+# MySQL을 Windows 서비스로 설치하면 자동 실행
+# 또는 MySQL Server 5.7/8.0 설치 후 실행
+
+# macOS (Homebrew)
+brew services start mysql
+
+# Linux
+sudo systemctl start mysql
+```
+
+## 4. 백엔드 실행
 
 ```bash
-# 환경변수 설정 (선택사항 - 기본값 사용 시 생략 가능)
-export KAKAO_CLIENT_ID=your_client_id_here
-export DB_USERNAME=root
-export DB_PASSWORD=
-
-# 백엔드 실행
+# 백엔드 실행 (IntelliJ IDE 권장)
 ./gradlew bootRun
 ```
 
-또는 IDE (IntelliJ, VS Code)의 실행 구성에서 환경변수 설정:
-- `KAKAO_CLIENT_ID`: Kakao Developers에서 발급받은 클라이언트 ID
-- `DB_USERNAME`: MySQL 계정
-- `DB_PASSWORD`: MySQL 비밀번호
+또는 IntelliJ에서:
+1. File → Open → 프로젝트 루트 선택
+2. "Run 'bootRun'" 버튼 클릭 또는 Shift+F10
 
-## 4. 모바일 앱 빌드 & 실행
+**실행 결과:**
+```
+Tomcat initialized with port 8080 (http)
+o.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed
+```
 
-Android Studio에서 프로젝트 열기:
-1. `mobile` 폴더 선택
-2. Android Studio가 자동으로 인식할 때까지 대기
-3. `Run 'app'` 실행
+이 메시지가 보이면 성공 ✅
 
-앱이 빌드될 때 `local.properties`의 카카오 네이티브 앱 키를 읽어서 자동으로 설정됩니다.
+## 5. 모바일 앱 빌드 & 실행
 
-## 5. 테스트
+**사전 요구사항:**
+- Android Studio 최신 버전
+- Android SDK 35 (자동 설치)
+- Android 에뮬레이터 또는 실기기
 
-1. 백엔드가 `http://localhost:8080`에서 실행 중인지 확인
-2. 모바일 앱에서 카카오 로그인 버튼 클릭
-3. 카카오 로그인 창이 뜨면 성공
+### Android Studio에서 실행:
+
+1. **프로젝트 열기**
+   - Android Studio → "Open" → `SmartStudyTimer` 폴더 선택
+   - 또는 `SmartStudyTimer/mobile` 폴더 오픈
+
+2. **에뮬레이터 또는 실기기 준비**
+   - **에뮬레이터:** Tools → Device Manager → Create Device → Pixel 6 (API 35) 생성 → 시작
+   - **실기기:** USB로 연결 후 개발자 모드 활성화
+
+3. **앱 실행**
+   - `Run 'app'` 클릭 (또는 Shift+F10)
+   - 또는 터미널에서:
+     ```bash
+     cd mobile
+     ./gradlew installDebug
+     ```
+
+### 🎯 로그인 화면 테스트
+
+**개발 모드일 때 (DEV_MODE=true):**
+```
+1. 앱 실행 → 로그인 화면 표시
+2. "[개발 모드] 테스트 계정으로 로그인" 텍스트 표시
+3. 텍스트 필드에 사용자명 입력 (예: testuser, john, alice)
+4. "테스트 로그인" 버튼 클릭
+5. → 로그인 완료! 메인 화면으로 이동
+```
+
+**실제 카카오 로그인 테스트 (DEV_MODE=false):**
+```
+1. 텍스트 필드에 카카오 API 키 설정
+2. "카카오계정으로 로그인" 버튼 클릭
+3. 카카오 로그인 창 표시
+4. 카카오 계정으로 로그인
+5. → 로그인 완료!
+```
+
+## 6. API 테스트 (선택사항)
+
+Postman 또는 curl로 개발 로그인 엔드포인트 테스트:
+
+```bash
+# 개발 모드 로그인 테스트
+curl -X POST http://localhost:8080/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"testUserName": "testuser"}'
+
+# 응답:
+# {
+#   "accessToken": "eyJhbGc...",
+#   "memberId": 1,
+#   "name": "testuser"
+# }
+```
+
+또는 Postman에서:
+1. POST 요청
+2. URL: `http://localhost:8080/auth/dev-login`
+3. Body (JSON):
+   ```json
+   {
+     "testUserName": "testuser"
+   }
+   ```
+4. Send
+
+**성공 응답 (200):**
+```json
+{
+  "accessToken": "eyJhbGc...",
+  "memberId": 1,
+  "name": "testuser"
+}
+```
 
 ## 문제 해결
 
