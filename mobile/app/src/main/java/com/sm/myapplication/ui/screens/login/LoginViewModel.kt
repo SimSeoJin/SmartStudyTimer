@@ -36,4 +36,19 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
     fun onKakaoLoginFailed(message: String?) {
         state.value = LoginUiState(isLoading = false, errorMessage = message ?: "카카오 로그인에 실패했습니다.")
     }
+
+    fun onDevLogin(testUserName: String, onSuccess: () -> Unit) {
+        if (state.value.isLoading) return
+        state.value = LoginUiState(isLoading = true)
+        viewModelScope.launch {
+            repo.devLogin(testUserName)
+                .onSuccess {
+                    state.value = LoginUiState(isLoading = false)
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    state.value = LoginUiState(isLoading = false, errorMessage = e.message)
+                }
+        }
+    }
 }

@@ -28,8 +28,13 @@ import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +52,7 @@ import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.user.UserApiClient
+import com.sm.myapplication.BuildConfig
 import com.sm.myapplication.ui.theme.Black50
 import com.sm.myapplication.ui.theme.GreenDark
 import com.sm.myapplication.ui.theme.GreenLight
@@ -58,6 +64,7 @@ import com.sm.myapplication.ui.theme.KakaoYellow
 fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewModel()) {
     val context = LocalContext.current
     val uiState by viewModel.state
+    var devTestUserName by remember { mutableStateOf("testuser") }
 
     // 배지 주변으로 2초마다 한 번씩 퍼졌다 사라지는 핑 파동
     val pulseTransition = rememberInfiniteTransition(label = "badgePulse")
@@ -215,56 +222,111 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             )
         }
 
-        Text(
-            text = "카카오 계정으로 3초만에 시작하기",
-            color = Black50,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
-        )
+        if (BuildConfig.DEV_MODE) {
+            Text(
+                text = "[개발 모드] 테스트 계정으로 로그인",
+                color = Black50,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
+            )
 
-        // 카카오 로그인
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(54.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = KakaoYellow,
-            shadowElevation = 6.dp,
-            onClick = {
-                if (uiState.isLoading) return@Surface
+            TextField(
+                value = devTestUserName,
+                onValueChange = { devTestUserName = it },
+                placeholder = { Text("사용자명 (예: testuser)") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedIndicatorColor = GreenPrimary,
+                    unfocusedIndicatorColor = Color.LightGray,
+                ),
+            )
 
-                val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
-                    if (token != null) {
-                        viewModel.onKakaoTokenReceived(token.accessToken, onSuccess = onLoginSuccess)
-                    } else if (error != null) {
-                        // 사용자가 취소한 경우는 에러로 표시하지 않음
-                        val cancelled = error is ClientError && error.reason == ClientErrorCause.Cancelled
-                        if (!cancelled) viewModel.onKakaoLoginFailed(error.message)
-                    }
-                }
+            Spacer(Modifier.height(12.dp))
 
-                if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
-                    UserApiClient.instance.loginWithKakaoTalk(context, callback = callback)
-                } else {
-                    UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
-                }
-            },
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(54.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = GreenPrimary,
+                shadowElevation = 6.dp,
+                onClick = {
+                    if (uiState.isLoading || devTestUserName.isBlank()) return@Surface
+                    viewModel.onDevLogin(devTestUserName, onSuccess = onLoginSuccess)
+                },
             ) {
-                Icon(Icons.Filled.Chat, contentDescription = null, tint = Color(0xFF3C1E1E), modifier = Modifier.size(20.dp))
-                Spacer(Modifier.size(8.dp))
-                Text(
-                    if (uiState.isLoading) "로그인 중..." else "카카오계정으로 로그인",
-                    color = Color(0xFF3C1E1E),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp,
-                )
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        if (uiState.isLoading) "로그인 중..." else "테스트 로그인",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    )
+                }
+            }
+        } else {
+            Text(
+                text = "카카오 계정으로 3초만에 시작하기",
+                color = Black50,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
+            )
+
+            // 카카오 로그인
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(54.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = KakaoYellow,
+                shadowElevation = 6.dp,
+                onClick = {
+                    if (uiState.isLoading) return@Surface
+
+                    val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
+                        if (token != null) {
+                            viewModel.onKakaoTokenReceived(token.accessToken, onSuccess = onLoginSuccess)
+                        } else if (error != null) {
+                            val cancelled = error is ClientError && error.reason == ClientErrorCause.Cancelled
+                            if (!cancelled) viewModel.onKakaoLoginFailed(error.message)
+                        }
+                    }
+
+                    if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                        UserApiClient.instance.loginWithKakaoTalk(context, callback = callback)
+                    } else {
+                        UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+                    }
+                },
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(Icons.Filled.Chat, contentDescription = null, tint = Color(0xFF3C1E1E), modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        if (uiState.isLoading) "로그인 중..." else "카카오계정으로 로그인",
+                        color = Color(0xFF3C1E1E),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    )
+                }
             }
         }
 

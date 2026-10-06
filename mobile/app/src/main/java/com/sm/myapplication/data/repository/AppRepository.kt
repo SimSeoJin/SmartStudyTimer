@@ -10,6 +10,7 @@ import com.sm.myapplication.data.entity.StudyMode
 import com.sm.myapplication.data.entity.StudySessionEntity
 import com.sm.myapplication.data.entity.TodoEntity
 import com.sm.myapplication.network.ApiClient
+import com.sm.myapplication.network.dto.DevLoginRequest
 import com.sm.myapplication.network.dto.ErrorResponse
 import com.sm.myapplication.network.dto.JoinRequest
 import com.sm.myapplication.network.dto.KakaoTokenRequest
@@ -84,6 +85,15 @@ class AppRepository(
 
     suspend fun loginWithKakao(kakaoAccessToken: String): Result<Unit> = runCatching {
         val response = ApiClient.authApi.kakaoLogin(KakaoTokenRequest(kakaoAccessToken))
+        val body = response.body()
+        if (!response.isSuccessful || body == null) {
+            throw Exception(parseErrorMessage(response.errorBody()?.string()))
+        }
+        prefs.saveSession(body.accessToken, body.memberId, body.name)
+    }
+
+    suspend fun devLogin(testUserName: String): Result<Unit> = runCatching {
+        val response = ApiClient.authApi.devLogin(DevLoginRequest(testUserName))
         val body = response.body()
         if (!response.isSuccessful || body == null) {
             throw Exception(parseErrorMessage(response.errorBody()?.string()))

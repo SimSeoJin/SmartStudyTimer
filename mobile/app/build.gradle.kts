@@ -22,6 +22,10 @@ val kakaoNativeAppKey: String =
 val apiBaseUrl: String =
     (localProperties.getProperty("API_BASE_URL") ?: "http://10.0.2.2:8080/")
 
+// 개발 모드: true이면 카카오 API 키 없이 테스트 사용자로 로그인 가능
+val devMode: Boolean =
+    (localProperties.getProperty("DEV_MODE") ?: "false").toBoolean()
+
 android {
     namespace = "com.sm.myapplication"
     compileSdk = 35
@@ -36,6 +40,7 @@ android {
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("Boolean", "DEV_MODE", "$devMode")
 
         ndk {
             abiFilters += listOf(

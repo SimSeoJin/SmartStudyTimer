@@ -16,6 +16,10 @@ data class KakaoTokenRequest(
     val accessToken: String,
 )
 
+data class DevLoginRequest(
+    val testUserName: String,
+)
+
 data class AuthResponse(
     val accessToken: String,
     val memberId: Long,

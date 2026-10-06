@@ -5,7 +5,19 @@
 - Android SDK (Android 앱 개발 시)
 - MySQL 서버 실행 중
 
-## 1. 카카오 애플리케이션 등록
+## 개발 모드 사용 (카카오 API 키 없이 테스트)
+
+**가장 간단한 방법:** `local.properties`에서 `DEV_MODE=true`로 설정하면 카카오 API 키 없이 테스트 사용자로 바로 로그인할 수 있습니다.
+
+```properties
+DEV_MODE=true
+```
+
+이 경우 카카오 애플리케이션 등록이 필요 없습니다.
+
+## 1. 카카오 애플리케이션 등록 (DEV_MODE=false일 때만)
+
+`DEV_MODE=false`로 설정했을 경우에만 필요합니다:
 
 1. [Kakao Developers](https://developers.kakao.com/)에서 로그인
 2. 새 애플리케이션 등록
@@ -22,7 +34,23 @@ cp local.properties.example local.properties
 
 그리고 파일을 열어서 값을 수정합니다:
 
+### 개발 모드 사용 (권장)
 ```properties
+# 개발 모드 활성화 (카카오 API 키 필요 없음)
+DEV_MODE=true
+
+# 백엔드 서버 주소
+API_BASE_URL=http://10.0.2.2:8080/
+
+# 카카오 키는 빈 값으로 둬도 됨
+KAKAO_NATIVE_APP_KEY=dummy
+```
+
+### 실제 카카오 로그인 테스트
+```properties
+# 개발 모드 비활성화
+DEV_MODE=false
+
 # 네이티브 앱 키 (위에서 발급받은 것)
 KAKAO_NATIVE_APP_KEY=your_native_app_key_here
 
