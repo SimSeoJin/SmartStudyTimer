@@ -14,5 +14,4 @@ public class StudyRecordRequest {
     private Long memberId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private Integer studyMinutes;
 }

@@ -21,6 +21,8 @@ public class FaceOverlayView extends View {
     private int imageHeight = 0;
     private boolean isFrontCamera = true;
     private String debugText = "";
+    /** 개발용 디버그 텍스트 표시 여부. 기본은 꺼짐. */
+    private boolean showDebugText = false;
 
     public FaceOverlayView(Context context) {
         super(context);
@@ -38,14 +40,19 @@ public class FaceOverlayView extends View {
     }
 
     private void init() {
-        boxPaint.setColor(Color.GREEN);
+        boxPaint.setColor(Color.rgb(0x5F, 0xD5, 0x7E));
         boxPaint.setStyle(Paint.Style.STROKE);
-        boxPaint.setStrokeWidth(8f);
+        boxPaint.setStrokeWidth(5f);
         boxPaint.setAntiAlias(true);
 
         textPaint.setColor(Color.RED);
         textPaint.setTextSize(36f);
         textPaint.setAntiAlias(true);
+    }
+
+    public void setShowDebugText(boolean show) {
+        this.showDebugText = show;
+        invalidate();
     }
 
     public void setFaces(List<Rect> faces, int imageWidth, int imageHeight, boolean isFrontCamera, String debugText) {
@@ -67,11 +74,13 @@ public class FaceOverlayView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        String[] lines = debugText.split(" / ");
-        float y = 50f;
-        for (String line : lines) {
-            canvas.drawText(line, 20, y, textPaint);
-            y += 40f;
+        if (showDebugText && !debugText.isEmpty()) {
+            String[] lines = debugText.split(" / ");
+            float y = 50f;
+            for (String line : lines) {
+                canvas.drawText(line, 20, y, textPaint);
+                y += 40f;
+            }
         }
 
         if (faces == null || faces.isEmpty() || imageWidth == 0 || imageHeight == 0) {

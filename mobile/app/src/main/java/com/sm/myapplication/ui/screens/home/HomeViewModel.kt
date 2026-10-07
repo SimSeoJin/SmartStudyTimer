@@ -14,6 +14,8 @@ import java.time.ZoneId
 
 data class HomeUiState(
     val todayTodos: List<TodoEntity> = emptyList(),
+    val todoTotal: Int = 0,
+    val todoDone: Int = 0,
     val ddayEpochDay: Long? = null,
     val ddayLabel: String = "기말 고사",
     val todayStudyMs: Long = 0L,
@@ -41,6 +43,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     ) { todos, dday, label, ms ->
         HomeUiState(
             todayTodos = todos.take(4),
+            todoTotal = todos.size,
+            todoDone = todos.count { it.isDone },
             ddayEpochDay = dday,
             ddayLabel = label,
             todayStudyMs = ms,

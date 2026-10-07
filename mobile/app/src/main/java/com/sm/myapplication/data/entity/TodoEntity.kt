@@ -15,4 +15,6 @@ data class TodoEntity(
     val memo: String = "",
     val isDone: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
+    // 서버에 올라간 Todo의 todoId. 아직 서버에 없으면 null.
+    val serverId: Long? = null,
 )

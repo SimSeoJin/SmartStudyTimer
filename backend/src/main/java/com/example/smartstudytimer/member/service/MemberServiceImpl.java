@@ -23,7 +23,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public String join(String id, String name, String phoneNumber, String password) {
+    public String join(String id, String name, String password) {
         if (memberRepository.findById(id).isPresent()) {
             throw new IllegalStateException("이미 사용 중인 아이디입니다.");
         }
@@ -34,7 +34,6 @@ public class MemberServiceImpl implements MemberService {
         Member member = Member.builder()
                 .id(id)
                 .name(name)
-                .phoneNumber(phoneNumber)
                 .password(passwordEncoder.encode(password))
                 .build();
 
@@ -81,7 +80,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public MemberInfoResponse updateMember(Long memberId, String nickname, String phoneNumber) {
+    public MemberInfoResponse updateMember(Long memberId, String nickname) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 
@@ -90,9 +89,6 @@ public class MemberServiceImpl implements MemberService {
                 throw new IllegalStateException("이미 사용 중인 닉네임입니다.");
             }
             member.setName(nickname.trim());
-        }
-        if (phoneNumber != null) {
-            member.setPhoneNumber(phoneNumber.isBlank() ? null : phoneNumber.trim());
         }
 
         // @Transactional 안이라 dirty checking으로 flush 시점에 UPDATE 반영됨.
@@ -104,7 +100,6 @@ public class MemberServiceImpl implements MemberService {
                 .memberId(member.getMemberId())
                 .nickname(member.getName())
                 .loginId(member.getId())
-                .phoneNumber(member.getPhoneNumber())
                 .oauthProvider(member.getOauthProvider())
                 .build();
     }

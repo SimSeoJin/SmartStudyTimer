@@ -6,6 +6,5 @@ import lombok.Data;
 public class JoinRequest {
     private String id;
     private String name;
-    private String phoneNumber;
     private String password;
 }

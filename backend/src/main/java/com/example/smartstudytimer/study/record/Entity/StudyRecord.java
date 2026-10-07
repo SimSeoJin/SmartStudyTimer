@@ -29,6 +29,6 @@ public class StudyRecord {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    @Column(name = "study_minutes")
-    private Integer studyMinutes;
+    @Column(name = "study_seconds")
+    private Integer studySeconds;
 }

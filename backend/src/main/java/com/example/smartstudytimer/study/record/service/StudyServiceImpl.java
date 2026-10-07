@@ -11,9 +11,12 @@ import com.example.smartstudytimer.study.daily.repository.DailySummaryRepository
 import com.example.smartstudytimer.study.summary.Entity.StudySummary;
 import com.example.smartstudytimer.study.summary.repository.StudySummaryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -29,6 +32,13 @@ public class StudyServiceImpl implements StudyService {
     @Override
     @Transactional
     public String recordStudy(StudyRecordRequest request) {
+        // 학습 시간은 클라이언트가 보낸 값이 아니라 start/end에서 서버가 직접 계산한다(초 단위).
+        if (request.getStartTime() == null || request.getEndTime() == null
+                || request.getEndTime().isBefore(request.getStartTime())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startTime/endTime이 올바르지 않습니다.");
+        }
+        int studySeconds = (int) Duration.between(request.getStartTime(), request.getEndTime()).getSeconds();
+
         Member member = memberRepository.findById(request.getMemberId())
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
@@ -36,7 +46,7 @@ public class StudyServiceImpl implements StudyService {
                 .member(member)
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
-                .studyMinutes(request.getStudyMinutes())
+                .studySeconds(studySeconds)
                 .build();
         studyRepository.save(record);
 
@@ -54,11 +64,11 @@ public class StudyServiceImpl implements StudyService {
             daily = DailySummary.builder()
                     .member(member)
                     .date(targetDate)
-                    .dailyTotal(request.getStudyMinutes())
+                    .dailyTotal(studySeconds)
                     .streak(currentDailyStreak)
                     .build();
         } else {
-            daily.setDailyTotal(daily.getDailyTotal() + request.getStudyMinutes());
+            daily.setDailyTotal(daily.getDailyTotal() + studySeconds);
             currentDailyStreak = daily.getStreak();
         }
         dailySummaryRepository.save(daily);
@@ -72,7 +82,7 @@ public class StudyServiceImpl implements StudyService {
                         .totalStudyDays(0)
                         .build());
 
-        summary.setTotalStudyTime(summary.getTotalStudyTime() + request.getStudyMinutes());
+        summary.setTotalStudyTime(summary.getTotalStudyTime() + studySeconds);
 
         if (summary.getLastStudyDate() == null || !summary.getLastStudyDate().equals(targetDate)) {
             summary.setTotalStudyDays(summary.getTotalStudyDays() + 1);

@@ -36,7 +36,6 @@ public class MemberController {
             memberService.join(
                 joinRequest.getId(),
                 joinRequest.getName(),
-                joinRequest.getPhoneNumber(),
                 joinRequest.getPassword()
             );
             return ResponseEntity.ok().build();
@@ -70,7 +69,7 @@ public class MemberController {
                                              @RequestBody MemberUpdateRequest request) {
         try {
             return ResponseEntity.ok(
-                    memberService.updateMember(memberId, request.getNickname(), request.getPhoneNumber()));
+                    memberService.updateMember(memberId, request.getNickname()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(e.getMessage()));
         } catch (IllegalStateException e) {

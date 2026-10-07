@@ -72,9 +72,7 @@ fun FrontCameraPreview(modifier: Modifier = Modifier) {
     }
 
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color.Black),
+        modifier = modifier.background(Color.Black),
         contentAlignment = Alignment.Center,
     ) {
         if (hasPermission) {
@@ -102,16 +100,21 @@ fun FrontCameraPreview(modifier: Modifier = Modifier) {
                 },
             )
 
-            Text(
-                text = statusText,
-                color = Color.White.copy(alpha = 0.82f),
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
-                maxLines = 4,
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-            )
+                    .padding(12.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    text = statusText,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                )
+            }
         } else {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -154,26 +157,25 @@ private class PureModeDetectionController(
 
     fun handle(result: DetectionResult) {
         val now = System.currentTimeMillis()
-        val debug = result.debugText.take(180)
 
         if (result.pauseGestureDetected) {
             faceMissingStartedAt = 0L
             TimerController.onPauseGesture()
-            onStatus("주먹 제스처 → 수동 일시중지\n$debug")
+            onStatus("주먹 제스처 → 일시정지")
             return
         }
 
         if (result.startGestureDetected) {
             faceMissingStartedAt = 0L
             TimerController.onStartGesture()
-            onStatus("손바닥 제스처 → 시작/재개\n$debug")
+            onStatus("손바닥 제스처 → 시작")
             return
         }
 
         if (result.faceDetected) {
             faceMissingStartedAt = 0L
             TimerController.onFaceDetected()
-            onStatus("얼굴 감지 중\n$debug")
+            onStatus("얼굴 감지 중")
             return
         }
 
@@ -184,9 +186,9 @@ private class PureModeDetectionController(
         val lostDuration = now - faceMissingStartedAt
         if (lostDuration >= FACE_LOST_TIMEOUT_MS) {
             TimerController.onFaceLost()
-            onStatus("5초 이상 얼굴 미감지 → 자동 일시중지\n$debug")
+            onStatus("얼굴이 보이지 않아 일시정지했어요")
         } else {
-            onStatus("얼굴 미감지 ${(lostDuration / 1000.0).format1()}초\n$debug")
+            onStatus("얼굴을 찾는 중 ${(lostDuration / 1000.0).format1()}초")
         }
     }
 }

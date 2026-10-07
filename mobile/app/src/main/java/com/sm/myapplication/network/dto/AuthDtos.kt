@@ -8,7 +8,6 @@ data class LoginRequest(
 data class JoinRequest(
     val id: String,
     val name: String,
-    val phoneNumber: String,
     val password: String,
 )
 
