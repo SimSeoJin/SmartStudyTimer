@@ -18,7 +18,10 @@ data class HomeUiState(
     val ddayLabel: String = "기말 고사",
     val todayStudyMs: Long = 0L,
     val tierName: String = "다이아",
-)
+) {
+    val todoTotal: Int get() = todayTodos.size
+    val todoDone: Int get() = todayTodos.count { it.isDone }
+}
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = AppRepository.get(app)

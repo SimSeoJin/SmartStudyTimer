@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.sm.myapplication.data.datastore.AppPreferences
+import com.sm.myapplication.util.NotificationHelper
 import com.sm.myapplication.ui.components.AppSwitch
 import com.sm.myapplication.ui.components.InsetCard
 import com.sm.myapplication.ui.components.NavBar
@@ -388,7 +389,7 @@ fun MyInfoScreen(onBack: () -> Unit) {
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 scope.launch {
-                    prefs.saveProfile(name, birth, email, selectedEducation)
+                    prefs.setUserProfile(name, email, selectedEducation, birth)
                     saved = true
                 }
             }

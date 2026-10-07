@@ -38,9 +38,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sm.myapplication.data.entity.StudyMode
 import com.sm.myapplication.data.repository.AppRepository
 import com.sm.myapplication.ui.components.NavBar
+import com.sm.myapplication.ui.components.ResponsiveTimerText
 import com.sm.myapplication.ui.components.StatusPill
 import com.sm.myapplication.ui.components.pressable
-import com.sm.myapplication.ui.screens.timer.ResponsiveTimerText
 import com.sm.myapplication.ui.screens.timer.TimerController
 import com.sm.myapplication.ui.screens.timer.TimerPauseCause
 import com.sm.myapplication.ui.theme.CardWhite

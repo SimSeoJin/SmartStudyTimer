@@ -39,6 +39,10 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+bootRun {
+    mainClass = 'com.example.smartstudytimer.SmartStudyTimerApplication'
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }

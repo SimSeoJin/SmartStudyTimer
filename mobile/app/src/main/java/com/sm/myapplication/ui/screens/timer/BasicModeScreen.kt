@@ -34,9 +34,10 @@ import com.sm.myapplication.data.entity.StudyMode
 import com.sm.myapplication.data.repository.AppRepository
 import com.sm.myapplication.ui.components.GhostButton
 import com.sm.myapplication.ui.components.NavBar
+import com.sm.myapplication.ui.components.ResponsiveTimerText
 import com.sm.myapplication.ui.components.StatusPill
 import com.sm.myapplication.ui.components.pressable
-import com.sm.myapplication.ui.screens.setting.NotificationHelper
+import com.sm.myapplication.util.NotificationHelper
 import com.sm.myapplication.ui.theme.AccentGreen
 import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.GroupedBg
