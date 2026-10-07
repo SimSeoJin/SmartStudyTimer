@@ -1,7 +1,7 @@
 package com.sm.myapplication.ui.nav
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,35 +9,47 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.sm.myapplication.ui.theme.BgGreenLight
-import com.sm.myapplication.ui.theme.GreenDark
-import com.sm.myapplication.ui.theme.GreenPrimary
+import com.sm.myapplication.ui.components.pressable
+import com.sm.myapplication.ui.theme.AccentGreen
+import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.LabelSecondary
+import com.sm.myapplication.ui.theme.Separator
 
 data class BottomTab(
     val route: String,
     val label: String,
+    val icon: ImageVector,
+    val iconSelected: ImageVector,
 )
 
 val bottomTabs = listOf(
-    BottomTab(Route.HOME, "Home"),
-    BottomTab(Route.CALENDAR, "Calender"),
-    BottomTab(Route.RANK, "Rank"),
-    BottomTab(Route.SETTING, "Setting"),
+    BottomTab(Route.HOME, "홈", Icons.Outlined.Home, Icons.Rounded.Home),
+    BottomTab(Route.CALENDAR, "캘린더", Icons.Outlined.CalendarMonth, Icons.Rounded.CalendarMonth),
+    BottomTab(Route.RANK, "랭킹", Icons.Outlined.EmojiEvents, Icons.Rounded.EmojiEvents),
+    BottomTab(Route.SETTING, "설정", Icons.Outlined.Settings, Icons.Rounded.Settings),
 )
 
 @Composable
@@ -45,36 +57,33 @@ fun AppBottomBar(
     currentRoute: String?,
     onTabSelected: (String) -> Unit,
 ) {
-    // 바깥: 흰색 (메인 화면 배경과 동일)
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center,
+            .background(CardWhite),
     ) {
-        // 안쪽: 흰색 알약 컨테이너 (그림자로 입체감)
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = Color.White,
-            shape = RoundedCornerShape(50),
-            shadowElevation = 4.dp,
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(0.5.dp)
+                .background(Separator)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .height(56.dp)
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 6.dp)
-                    .height(54.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                bottomTabs.forEach { tab ->
-                    BottomTabItem(
-                        tab = tab,
-                        selected = currentRoute == tab.route,
-                        onClick = { onTabSelected(tab.route) },
-                    )
-                }
+            bottomTabs.forEach { tab ->
+                BottomTabItem(
+                    tab = tab,
+                    selected = currentRoute == tab.route,
+                    onClick = { onTabSelected(tab.route) },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -85,37 +94,32 @@ private fun BottomTabItem(
     tab: BottomTab,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val pillBg = if (selected) Color(0x4DC8EDC8) else Color.Transparent
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(pillBg)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            DiamondIcon(big = selected)
-            Spacer(Modifier.height(3.dp))
-            Text(
-                text = tab.label,
-                color = if (selected) GreenDark else GreenPrimary,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                fontSize = 10.sp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DiamondIcon(big: Boolean) {
-    val side = if (big) 18.dp else 14.dp
-    Box(
-        modifier = Modifier
-            .size(side)
-            .rotate(45f)
-            .clip(RoundedCornerShape(2.dp))
-            .background(GreenPrimary),
+    val tint by animateColorAsState(
+        targetValue = if (selected) AccentGreen else LabelSecondary,
+        label = "tabTint",
     )
+    Column(
+        modifier = modifier
+            .height(52.dp)
+            .pressable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = if (selected) tab.iconSelected else tab.icon,
+            contentDescription = tab.label,
+            tint = tint,
+            modifier = Modifier.size(25.dp),
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            text = tab.label,
+            color = tint,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            ),
+        )
+    }
 }

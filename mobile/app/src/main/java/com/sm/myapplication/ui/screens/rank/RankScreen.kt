@@ -2,7 +2,7 @@ package com.sm.myapplication.ui.screens.rank
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,144 +19,136 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.sm.myapplication.ui.theme.BgGreenLight
-import com.sm.myapplication.ui.theme.Black50
-import com.sm.myapplication.ui.theme.Gray
-import com.sm.myapplication.ui.theme.GreenPrimary
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.sm.myapplication.ui.components.AppSwitch
+import com.sm.myapplication.ui.components.InsetCard
+import com.sm.myapplication.ui.components.NavBar
+import com.sm.myapplication.ui.components.RowDivider
+import com.sm.myapplication.ui.components.SummaryHeader
+import com.sm.myapplication.ui.components.pressable
+import com.sm.myapplication.ui.theme.AccentGreen
+import com.sm.myapplication.ui.theme.AccentInk
+import com.sm.myapplication.ui.theme.AccentTint
+import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.Green300
+import com.sm.myapplication.ui.theme.Green500
+import com.sm.myapplication.ui.theme.Green700
+import com.sm.myapplication.ui.theme.Green900
+import com.sm.myapplication.ui.theme.GroupedBg
+import com.sm.myapplication.ui.theme.LabelPrimary
+import com.sm.myapplication.ui.theme.LabelSecondary
 
-private data class RankRow(val rank: Int, val name: String, val time: String)
-private data class TopRanker(val rank: Int, val name: String, val barHeight: Int)
+// TODO(서버 연동): 랭킹 API가 붙기 전까지 쓰는 표시용 더미 데이터
+private data class RankRow(val rank: Int, val name: String, val time: String, val isMe: Boolean = false)
+private data class TopRanker(val rank: Int, val name: String, val time: String, val barHeight: Int)
 
 private val FILTERS = listOf("친구", "전체", "고1", "고2", "고3", "대학생")
 private val DUMMY_TOP3 = listOf(
-    TopRanker(2, "김철수", 73),
-    TopRanker(1, "김철수", 92),
-    TopRanker(3, "김영희", 66),
+    TopRanker(2, "김철수", "12h 40m", 62),
+    TopRanker(1, "이서연", "15h 02m", 88),
+    TopRanker(3, "김영희", "11h 15m", 50),
 )
-private val DUMMY_LIST = (4..10).map { RankRow(it, "이연주", "11:11:11") }
+private val DUMMY_LIST = listOf(
+    RankRow(4, "이연주", "11:11:11"),
+    RankRow(5, "박서준", "10:48:02"),
+    RankRow(6, "정하늘", "09:30:44"),
+    RankRow(7, "최민지", "08:57:10"),
+    RankRow(55, "나", "01:24:36", isMe = true),
+)
+private const val MY_RANK = 55
 
 @Composable
 fun RankScreen(onOpenTier: () -> Unit) {
     var pureModeOnly by remember { mutableStateOf(true) }
-    var selectedFilter by remember { mutableStateOf(0) }
+    var selectedFilter by remember { mutableIntStateOf(0) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(GroupedBg)
             .verticalScroll(rememberScrollState()),
     ) {
-        // 헤더
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(96.dp)
-                .background(BgGreenLight),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp, start = 16.dp, end = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        SummaryHeader(
+            summary = "이번 주 나의 순위",
+            highlight = "${MY_RANK}위",
+            sub = "${FILTERS[selectedFilter]} 기준 · 티어는 다이아",
+            trailing = {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color.White),
-                    contentAlignment = Alignment.Center,
+                        .background(AccentTint)
+                        .pressable(onClick = onOpenTier)
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Black50)
+                    Text(
+                        "티어표",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = AccentInk,
+                    )
                 }
-                Spacer(Modifier.weight(1f))
-                Text("랭킹", color = Black50, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                Spacer(Modifier.weight(1f))
-                Spacer(Modifier.size(40.dp))
-            }
-        }
+            },
+        )
 
-        Spacer(Modifier.height(10.dp))
-
-        // 순공 모드만 보기
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clickable { pureModeOnly = !pureModeOnly },
-            verticalAlignment = Alignment.CenterVertically,
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(if (pureModeOnly) GreenPrimary else Color.White)
-                    .border(1.5.dp, if (pureModeOnly) GreenPrimary else Gray, RoundedCornerShape(4.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (pureModeOnly) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                }
-            }
-            Spacer(Modifier.size(8.dp))
-            Text("순공 모드만 보기", fontSize = 13.sp, color = Black50, fontWeight = FontWeight.Medium)
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        // 필터 칩들 (가로 스크롤 대신 균등 분할)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            FILTERS.forEachIndexed { idx, name ->
-                FilterChip(label = name, selected = selectedFilter == idx) { selectedFilter = idx }
+            FILTERS.forEachIndexed { index, name ->
+                FilterChip(label = name, selected = selectedFilter == index) { selectedFilter = index }
             }
         }
 
         Spacer(Modifier.height(20.dp))
 
-        // Top 3 podium
-        Podium3(top3 = DUMMY_TOP3)
+        Podium(DUMMY_TOP3)
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // 랭킹 리스트
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color.White)
-                .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(20.dp))
-                .padding(vertical = 8.dp),
-        ) {
-            // 헤더
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
-                Text("순위", color = Black50, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.width(48.dp))
-                Text("이름", color = Black50, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                Text("시간", color = Black50, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        InsetCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pressable { pureModeOnly = !pureModeOnly }
+                    .padding(start = 16.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "순공 모드만 보기",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = LabelPrimary,
+                    modifier = Modifier.weight(1f),
+                )
+                AppSwitch(checked = pureModeOnly, onCheckedChange = { pureModeOnly = it })
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFEEEEEE)))
-            DUMMY_LIST.forEach { row ->
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        InsetCard {
+            DUMMY_LIST.forEachIndexed { index, row ->
                 RankListRow(row)
+                if (index != DUMMY_LIST.lastIndex) RowDivider(inset = 16.dp)
             }
         }
 
@@ -168,69 +160,75 @@ fun RankScreen(onOpenTier: () -> Unit) {
 private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (selected) Color(0xFFD9D9D9).copy(alpha = 0.5f) else Color.Transparent)
-            .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .clip(CircleShape)
+            .background(if (selected) AccentGreen else CardWhite)
+            .pressable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
     ) {
-        Text(label, fontSize = 11.sp, color = Black50, fontWeight = FontWeight.Medium)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = if (selected) CardWhite else LabelSecondary,
+        )
     }
 }
 
 @Composable
-private fun Podium3(top3: List<TopRanker>) {
+private fun Podium(top3: List<TopRanker>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(horizontal = 26.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
-        top3.forEach { t ->
-            PodiumColumn(t, modifier = Modifier.weight(1f))
+        top3.forEach { ranker ->
+            PodiumColumn(ranker, modifier = Modifier.weight(1f))
         }
     }
 }
 
 @Composable
 private fun PodiumColumn(ranker: TopRanker, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // 원형 프로필
+    val isFirst = ranker.rank == 1
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        if (isFirst) {
+            Icon(
+                Icons.Rounded.EmojiEvents,
+                contentDescription = "1위",
+                tint = Color(0xFFF5B301),
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.height(2.dp))
+        }
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(if (isFirst) 54.dp else 46.dp)
                 .clip(CircleShape)
-                .background(Gray),
+                .background(Brush.linearGradient(listOf(Green300, AccentGreen)))
+                .then(if (isFirst) Modifier.border(2.dp, AccentGreen, CircleShape) else Modifier),
         )
         Spacer(Modifier.height(6.dp))
-        // 이름 라벨
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(BgGreenLight)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-        ) {
-            Text(ranker.name, fontSize = 11.sp, color = Black50, fontWeight = FontWeight.Medium)
-        }
+        Text(ranker.name, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = LabelPrimary)
+        Text(ranker.time, style = MaterialTheme.typography.labelSmall, color = LabelSecondary)
         Spacer(Modifier.height(6.dp))
-        // 막대 (높이 다름)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(ranker.barHeight.dp)
-                .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-                .background(GreenPrimary),
+                .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                .background(
+                    Brush.verticalGradient(
+                        if (isFirst) listOf(Green500, Green900) else listOf(Green500, Green700)
+                    )
+                ),
             contentAlignment = Alignment.TopCenter,
         ) {
-            Icon(
-                imageVector = Icons.Filled.EmojiEvents,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.padding(top = 6.dp).size(22.dp),
+            Text(
+                text = "${ranker.rank}",
+                style = MaterialTheme.typography.titleMedium,
+                color = CardWhite,
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
@@ -239,88 +237,79 @@ private fun PodiumColumn(ranker: TopRanker, modifier: Modifier = Modifier) {
 @Composable
 private fun RankListRow(row: RankRow) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (row.isMe) AccentTint else Color.Transparent)
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("${row.rank}", color = Black50, fontWeight = FontWeight.Medium, fontSize = 13.sp, modifier = Modifier.width(28.dp))
+        Text(
+            text = "${row.rank}",
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+            color = if (row.isMe) AccentInk else LabelSecondary,
+            modifier = Modifier.width(26.dp),
+        )
         Box(
             modifier = Modifier
-                .size(20.dp)
+                .size(26.dp)
                 .clip(CircleShape)
-                .background(Gray),
+                .background(
+                    if (row.isMe) Brush.linearGradient(listOf(AccentGreen, AccentInk))
+                    else Brush.linearGradient(listOf(Color(0xFFE3E4E8), Color(0xFFD5D7DD)))
+                )
         )
-        Spacer(Modifier.size(8.dp))
-        Text(row.name, color = Color(0xFF1B1A1C), fontWeight = FontWeight.Medium, fontSize = 14.sp, modifier = Modifier.weight(1f))
-        Text(row.time, color = Color(0xFF1B1A1C), fontWeight = FontWeight.Medium, fontSize = 13.sp)
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = row.name,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = if (row.isMe) FontWeight.Bold else FontWeight.Normal,
+            ),
+            color = LabelPrimary,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = row.time,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontWeight = if (row.isMe) FontWeight.Bold else FontWeight.Normal,
+            ),
+            color = if (row.isMe) AccentInk else LabelSecondary,
+        )
     }
 }
 
 @Composable
 fun TierRankDialog(onClose: () -> Unit) {
     val tiers = listOf(
-        "공부 신" to "xxh 이상",
-        "공부 마스터" to "xxh 이상 ~ xxh 이하",
-        "공부중독" to "xxh 이상 ~ xxh 이하",
-        "공부 입문" to "xxh 이상 ~ xxh 이하",
-        "공부 새싹" to "xxh 이상 ~ xxh 이하",
+        Triple("공부 신", "하루 평균 10시간 이상", Green900),
+        Triple("공부 마스터", "하루 평균 7시간 이상", Green700),
+        Triple("공부중독", "하루 평균 5시간 이상", AccentGreen),
+        Triple("공부 입문", "하루 평균 3시간 이상", Green300),
+        Triple("공부 새싹", "하루 평균 1시간 이상", Color(0xFFC9E9D4)),
     )
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0x80000000))
-            .clickable(onClick = onClose),
-        contentAlignment = Alignment.Center,
-    ) {
+    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .clip(RoundedCornerShape(30.dp))
-                .background(BgGreenLight)
-                .padding(12.dp)
-                .clickable(enabled = false) {},
+                .fillMaxWidth(0.9f)
+                .clip(RoundedCornerShape(24.dp))
+                .background(CardWhite),
         ) {
-            // 헤더
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            NavBar(title = "티어 기준표", actionLabel = "닫기", onAction = onClose)
+            Column(
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 22.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(BgGreenLight)
-                        .clickable(onClick = onClose),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Black50)
-                }
-                Spacer(Modifier.weight(1f))
-                Text("티어기준표", color = Black50, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Spacer(Modifier.weight(1f))
-                Spacer(Modifier.size(40.dp))
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(Color.White)
-                    .padding(24.dp),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    tiers.forEach { (name, range) ->
-                        Row(verticalAlignment = Alignment.Top) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(GreenPrimary),
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Column {
-                                Text(name, color = Black50, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text(range, color = Black50, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                            }
+                tiers.forEach { (name, range, color) ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(name, style = MaterialTheme.typography.titleSmall, color = LabelPrimary)
+                            Text(range, style = MaterialTheme.typography.bodySmall, color = LabelSecondary)
                         }
                     }
                 }
