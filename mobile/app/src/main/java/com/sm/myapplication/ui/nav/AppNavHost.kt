@@ -23,6 +23,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sm.myapplication.data.datastore.AppPreferences
 import com.sm.myapplication.data.repository.AppRepository
+import com.sm.myapplication.network.ApiClient
+import com.sm.myapplication.network.JwtUtils
 import com.sm.myapplication.ui.screens.calendar.CalendarScreen
 import com.sm.myapplication.ui.screens.dday.DDayDialog
 import com.sm.myapplication.ui.screens.home.MainHomeScreen
@@ -43,10 +45,44 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+
+    // 저장된 토큰이 살아있으면 로그인 화면을 건너뛴다. 읽기 전에는 null이라 NavHost를 만들지 않는다(로그인 화면 깜빡임 방지).
+    var startDestination by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        val repo = AppRepository.get(context.applicationContext)
+        val token = repo.accessToken.first()
+        startDestination = if (JwtUtils.isNotExpired(token)) {
+            // 로그인된 상태로 앱을 켜면 서버와 Todo/D-Day를 맞춘다(백그라운드).
+            repo.syncInBackground()
+            Route.HOME
+        } else {
+            // 만료된 토큰이 남아 있으면 같이 정리한다.
+            if (token != null) repo.logout()
+            Route.LOGIN
+        }
+    }
+
+    // 토큰을 붙였는데 서버가 401로 거절하면(서명 불일치/서버 초기화 등) 세션을 정리하고 로그인 화면으로 보낸다.
+    LaunchedEffect(startDestination) {
+        if (startDestination == null) return@LaunchedEffect
+        ApiClient.unauthorized.collect {
+            if (navController.currentDestination?.route != Route.LOGIN) {
+                AppRepository.get(context.applicationContext).logout()
+                navController.navigate(Route.LOGIN) { popUpTo(0) }
+            }
+        }
+    }
+
+    val start = startDestination
+    if (start == null) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+        return
+    }
 
     NavHost(
         navController = navController,
-        startDestination = Route.LOGIN
+        startDestination = start
     ) {
         composable(Route.LOGIN) {
             LoginScreen(
@@ -93,14 +129,6 @@ fun AppNavHost() {
         composable(Route.TODO_ADD) {
             TodoAddScreen(onBack = { navController.popBackStack() })
         }
-
-        composable(Route.TIER_RANK) {
-            TierRankDialog(onClose = { navController.popBackStack() })
-        }
-
-        composable(Route.DDAY) {
-            DDayDialog(onClose = { navController.popBackStack() })
-        }
     }
 }
 
@@ -112,6 +140,10 @@ private fun MainScaffold(
     // 로그아웃에서 suspend 함수(logout)를 실행하기 위한 CoroutineScope
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // 팝업은 화면 전환(route) 없이 현재 화면 위에 오버레이로만 띄운다.
+    var showDDay by remember { mutableStateOf(false) }
+    var showTier by remember { mutableStateOf(false) }
 
     var userName by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -155,22 +187,22 @@ private fun MainScaffold(
                     onStartBasicMode = { navController.navigate(Route.BASIC_MODE) },
                     onStartPureMode = { navController.navigate(Route.PURE_MODE) },
                     onOpenTodos = { navController.navigate(Route.TODO_LIST) },
-                    onOpenDDay = { navController.navigate(Route.DDAY) },
-                    onOpenTier = { navController.navigate(Route.TIER_RANK) },
+                    onOpenDDay = { showDDay = true },
+                    onOpenTier = { showTier = true },
                     onOpenProfile = { navController.navigate(Route.SETTING_MY_INFO) },
                 )
 
                 Route.CALENDAR -> CalendarScreen()
 
                 Route.RANK -> RankScreen(
-                    onOpenTier = { navController.navigate(Route.TIER_RANK) },
+                    onOpenTier = { showTier = true },
                 )
 
                 Route.SETTING -> SettingScreen(
                     onOpenMyInfo = { navController.navigate(Route.SETTING_MY_INFO) },
                     onOpenPrivacy = { navController.navigate(Route.SETTING_PRIVACY) },
                     onOpenHelp = { navController.navigate(Route.SETTING_HELP) },
-                    onOpenDDay = { navController.navigate(Route.DDAY) },
+                    onOpenDDay = { showDDay = true },
                     onLogout = {
                         scope.launch {
                             AppRepository.get(context.applicationContext).logout()
@@ -181,4 +213,7 @@ private fun MainScaffold(
             }
         }
     }
+
+    if (showDDay) DDayDialog(onClose = { showDDay = false })
+    if (showTier) TierRankDialog(onClose = { showTier = false })
 }

@@ -23,6 +23,8 @@ data class CalendarUiState(
     val dayTotalsMs: Map<Long, Long> = emptyMap(),
     val selectedDayTodos: List<TodoEntity> = emptyList(),
     val selectedDaySessions: List<StudySessionEntity> = emptyList(),
+    val ddayEpochDay: Long? = null,
+    val ddayLabel: String = "",
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,16 +45,21 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     private val selectedTodosFlow = _selected.flatMapLatest { repo.observeTodosByDate(it.toEpochDay()) }
     private val selectedSessionsFlow = _selected.flatMapLatest { repo.observeSessionsByDate(it.toEpochDay()) }
 
+    private val ddayFlow = combine(repo.ddayEpochDay, repo.ddayLabel) { day, label -> day to label }
+
     val state = combine(
-        _yearMonth, _selected, monthlyFlow, selectedTodosFlow, selectedSessionsFlow
-    ) { ym, sel, totals, todos, sessions ->
-        CalendarUiState(
-            yearMonth = ym,
-            selectedDate = sel,
-            dayTotalsMs = totals,
-            selectedDayTodos = todos,
-            selectedDaySessions = sessions,
-        )
+        combine(_yearMonth, _selected, monthlyFlow, selectedTodosFlow, selectedSessionsFlow) { ym, sel, totals, todos, sessions ->
+            CalendarUiState(
+                yearMonth = ym,
+                selectedDate = sel,
+                dayTotalsMs = totals,
+                selectedDayTodos = todos,
+                selectedDaySessions = sessions,
+            )
+        },
+        ddayFlow,
+    ) { base, dday ->
+        base.copy(ddayEpochDay = dday.first, ddayLabel = dday.second)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CalendarUiState())
 
     fun prevMonth() { _yearMonth.value = _yearMonth.value.minusMonths(1) }

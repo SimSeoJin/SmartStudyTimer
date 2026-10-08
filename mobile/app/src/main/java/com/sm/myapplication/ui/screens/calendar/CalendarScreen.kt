@@ -93,6 +93,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
         MonthCard(
             yearMonth = state.yearMonth,
             totalsByDay = state.dayTotalsMs,
+            ddayEpochDay = state.ddayEpochDay,
             today = today,
             selected = state.selectedDate,
             onPrev = viewModel::prevMonth,
@@ -120,6 +121,26 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
                 state.selectedDaySessions.forEachIndexed { index, session ->
                     SessionRow(session)
                     if (index != state.selectedDaySessions.lastIndex) RowDivider(inset = 50.dp)
+                }
+            }
+        }
+
+        if (state.ddayEpochDay == state.selectedDate.toEpochDay()) {
+            SectionHeader("D-Day")
+            InsetCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(Destructive))
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = state.ddayLabel.ifBlank { "D-Day" },
+                        style = MaterialTheme.typography.titleSmall,
+                        color = LabelPrimary,
+                    )
                 }
             }
         }
@@ -212,6 +233,7 @@ private fun TodoRow(todo: TodoEntity) {
 private fun MonthCard(
     yearMonth: YearMonth,
     totalsByDay: Map<Long, Long>,
+    ddayEpochDay: Long?,
     today: LocalDate,
     selected: LocalDate,
     onPrev: () -> Unit,
@@ -280,6 +302,7 @@ private fun MonthCard(
                             studyMs = ms,
                             strong = maxMs > 0 && ms >= maxMs / 2,
                             isToday = date == today,
+                            isDDay = date.toEpochDay() == ddayEpochDay,
                             isSelected = date == selected,
                             modifier = Modifier.weight(1f),
                             onClick = { onSelect(date) },
@@ -314,6 +337,7 @@ private fun DayCell(
     studyMs: Long,
     strong: Boolean,
     isToday: Boolean,
+    isDDay: Boolean,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
@@ -329,16 +353,22 @@ private fun DayCell(
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) AccentGreen else Color.Transparent),
+                    .background(
+                        when {
+                            isSelected -> AccentGreen
+                            isDDay -> Destructive
+                            else -> Color.Transparent
+                        }
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = day.toString(),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (isSelected || isToday || isDDay) FontWeight.Bold else FontWeight.Normal,
                     ),
                     color = when {
-                        isSelected -> CardWhite
+                        isSelected || isDDay -> CardWhite
                         isToday -> AccentInk
                         else -> LabelPrimary
                     },

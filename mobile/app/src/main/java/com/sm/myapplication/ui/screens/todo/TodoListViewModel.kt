@@ -47,7 +47,6 @@ class TodoAddViewModel(app: Application) : AndroidViewModel(app) {
         category: TodoCategory,
         dateEpochDay: Long,
         timeMinutes: Int?,
-        memo: String,
         onDone: () -> Unit,
     ) {
         if (title.isBlank()) { onDone(); return }
@@ -58,7 +57,6 @@ class TodoAddViewModel(app: Application) : AndroidViewModel(app) {
                     category = category,
                     dateEpochDay = dateEpochDay,
                     timeMinutes = timeMinutes,
-                    memo = memo,
                 )
             )
             onDone()

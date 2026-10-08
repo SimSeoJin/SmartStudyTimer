@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
@@ -129,6 +130,37 @@ fun NavBar(
     }
 }
 
+/** 팝업 상단 헤더. 가운데 제목, 우측에 초록 원 안의 검은 X 닫기 버튼(모서리에서 안쪽으로 띄움). */
+@Composable
+fun DialogHeader(title: String, onClose: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 16.dp)
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(AccentGreen)
+                .pressable(onClick = onClose),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = "닫기",
+                tint = Color.Black,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+/** 큰 제목 (할 일·설정 등 제목이 필요한 화면). */
 @Composable
 fun LargeTitle(title: String, caption: String? = null, modifier: Modifier = Modifier) {
     Column(modifier = modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 12.dp)) {
