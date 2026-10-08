@@ -45,6 +45,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sm.myapplication.data.entity.TodoCategory
 import com.sm.myapplication.data.entity.TodoEntity
+import com.sm.myapplication.ui.components.AppSwitch
+import com.sm.myapplication.ui.components.DateWheelPicker
 import com.sm.myapplication.ui.components.InsetCard
 import com.sm.myapplication.ui.components.LargeTitle
 import com.sm.myapplication.ui.components.NavBar
@@ -52,6 +54,7 @@ import com.sm.myapplication.ui.components.PrimaryButton
 import com.sm.myapplication.ui.components.RoundCheck
 import com.sm.myapplication.ui.components.RowDivider
 import com.sm.myapplication.ui.components.SectionHeader
+import com.sm.myapplication.ui.components.TimeWheelPicker
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.screens.home.formatClock
 import com.sm.myapplication.ui.theme.AccentGreen
@@ -131,7 +134,7 @@ fun TodoListScreen(
         }
 
         PrimaryButton(
-            text = "＋  새로운 할 일",
+            text = "＋  추가",
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
             onClick = onAdd,
         )
@@ -156,9 +159,6 @@ private fun TodoRow(todo: TodoEntity, onToggle: () -> Unit) {
                 color = if (todo.isDone) LabelSecondary else LabelPrimary,
                 textDecoration = if (todo.isDone) TextDecoration.LineThrough else TextDecoration.None,
             )
-            if (todo.memo.isNotBlank()) {
-                Text(todo.memo, style = MaterialTheme.typography.bodySmall, color = LabelSecondary)
-            }
         }
         if (todo.category != TodoCategory.GENERAL) {
             Box(
@@ -196,15 +196,12 @@ fun TodoAddScreen(
 ) {
     var title by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(TodoCategory.GENERAL) }
-    var dateText by remember { mutableStateOf(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"))) }
-    var timeText by remember { mutableStateOf("") }
-    var memo by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf(LocalDate.now()) }
+    var useTime by remember { mutableStateOf(false) }
+    var timeMinutes by remember { mutableStateOf(9 * 60) }
 
     val save = {
-        val day = runCatching {
-            LocalDate.parse(dateText, DateTimeFormatter.ofPattern("yyyy/MM/dd")).toEpochDay()
-        }.getOrDefault(LocalDate.now().toEpochDay())
-        viewModel.save(title, category, day, parseTimeMinutes(timeText), memo, onDone = onBack)
+        viewModel.save(title, category, date.toEpochDay(), if (useTime) timeMinutes else null, onDone = onBack)
     }
 
     Column(
@@ -216,20 +213,15 @@ fun TodoAddScreen(
             .imePadding(),
     ) {
         NavBar(
-            title = "새로운 할 일",
+            title = "일정 추가",
             onBack = onBack,
             backLabel = "취소",
-            actionLabel = "저장",
-            actionEnabled = title.isNotBlank(),
-            onAction = save,
         )
 
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             SectionHeader("할 일")
             InsetCard {
                 FieldRow(label = "이름", value = title, placeholder = "무엇을 할까요?") { title = it }
-                RowDivider(inset = 16.dp)
-                FieldRow(label = "메모", value = memo, placeholder = "선택 입력") { memo = it }
             }
 
             SectionHeader("분류")
@@ -248,9 +240,24 @@ fun TodoAddScreen(
 
             SectionHeader("일시")
             InsetCard {
-                FieldRow(label = "날짜", value = dateText, placeholder = "YYYY/MM/DD", numeric = true) { dateText = it }
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                    DateWheelPicker(date = date, onDateChange = { date = it })
+                }
                 RowDivider(inset = 16.dp)
-                FieldRow(label = "시간", value = timeText, placeholder = "예: 19:00", numeric = true) { timeText = it }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("시간 설정", style = MaterialTheme.typography.bodyMedium, color = LabelPrimary, modifier = Modifier.weight(1f))
+                    AppSwitch(checked = useTime, onCheckedChange = { useTime = it })
+                }
+                if (useTime) {
+                    Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp)) {
+                        TimeWheelPicker(minutes = timeMinutes, onMinutesChange = { timeMinutes = it })
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -329,14 +336,4 @@ private fun CategoryChip(
             color = if (selected) CardWhite else LabelSecondary,
         )
     }
-}
-
-private fun parseTimeMinutes(text: String): Int? {
-    if (text.isBlank()) return null
-    val regex = Regex("""(\d{1,2})\s*:?\s*(\d{1,2})?""")
-    val m = regex.find(text) ?: return null
-    val h = m.groupValues[1].toIntOrNull() ?: return null
-    val min = m.groupValues[2].toIntOrNull() ?: 0
-    if (h !in 0..23 || min !in 0..59) return null
-    return h * 60 + min
 }

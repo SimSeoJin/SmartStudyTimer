@@ -40,7 +40,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.sm.myapplication.ui.components.AppSwitch
 import com.sm.myapplication.ui.components.InsetCard
-import com.sm.myapplication.ui.components.NavBar
+import com.sm.myapplication.ui.components.DialogHeader
 import com.sm.myapplication.ui.components.RowDivider
 import com.sm.myapplication.ui.components.SummaryHeader
 import com.sm.myapplication.ui.components.pressable
@@ -293,7 +293,7 @@ fun TierRankDialog(onClose: () -> Unit) {
                 .clip(RoundedCornerShape(24.dp))
                 .background(CardWhite),
         ) {
-            NavBar(title = "티어 기준표", actionLabel = "닫기", onAction = onClose)
+            DialogHeader(title = "티어 기준표", onClose = onClose)
             Column(
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 22.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
