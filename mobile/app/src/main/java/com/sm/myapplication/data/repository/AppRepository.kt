@@ -16,6 +16,7 @@ import com.sm.myapplication.network.dto.DevLoginRequest
 import com.sm.myapplication.network.dto.ErrorResponse
 import com.sm.myapplication.network.dto.JoinRequest
 import com.sm.myapplication.network.dto.KakaoTokenRequest
+import com.sm.myapplication.network.dto.NaverTokenRequest
 import com.sm.myapplication.network.dto.LoginRequest
 import com.sm.myapplication.network.dto.StudyRecordRequest
 import com.sm.myapplication.network.dto.TodoRequest
@@ -242,6 +243,16 @@ class AppRepository(
 
     suspend fun loginWithKakao(kakaoAccessToken: String): Result<Unit> = runCatching {
         val response = ApiClient.authApi.kakaoLogin(KakaoTokenRequest(kakaoAccessToken))
+        val body = response.body()
+        if (!response.isSuccessful || body == null) {
+            throw Exception(parseErrorMessage(response.errorBody()?.string()))
+        }
+        prefs.saveSession(body.accessToken, body.memberId, body.name)
+        onLoggedIn(body.memberId)
+    }
+
+    suspend fun loginWithNaver(naverAccessToken: String): Result<Unit> = runCatching {
+        val response = ApiClient.authApi.naverLogin(NaverTokenRequest(naverAccessToken))
         val body = response.body()
         if (!response.isSuccessful || body == null) {
             throw Exception(parseErrorMessage(response.errorBody()?.string()))

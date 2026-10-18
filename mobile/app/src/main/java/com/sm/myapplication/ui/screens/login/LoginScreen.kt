@@ -52,6 +52,8 @@ import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.user.UserApiClient
+import com.navercorp.nid.NaverIdLoginSDK
+import com.navercorp.nid.oauth.OAuthLoginCallback
 import com.sm.myapplication.BuildConfig
 import com.sm.myapplication.ui.theme.Black50
 import com.sm.myapplication.ui.theme.GreenDark
@@ -59,6 +61,7 @@ import com.sm.myapplication.ui.theme.GreenLight
 import com.sm.myapplication.ui.theme.GreenLighter
 import com.sm.myapplication.ui.theme.GreenPrimary
 import com.sm.myapplication.ui.theme.KakaoYellow
+import com.sm.myapplication.ui.theme.NaverGreen
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewModel()) {
@@ -353,6 +356,53 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         Text(
                             if (uiState.isLoading) "로그인 중..." else "카카오계정으로 로그인",
                             color = Color(0xFF3C1E1E),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // 네이버 로그인
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = NaverGreen,
+                    shadowElevation = 6.dp,
+                    onClick = {
+                        if (uiState.isLoading) return@Surface
+
+                        val callback = object : OAuthLoginCallback {
+                            override fun onSuccess() {
+                                viewModel.onNaverTokenReceived(NaverIdLoginSDK.getAccessToken().orEmpty(), onSuccess = onLoginSuccess)
+                            }
+
+                            override fun onFailure(httpStatus: Int, message: String) {
+                                viewModel.onNaverLoginFailed(NaverIdLoginSDK.getLastErrorDescription() ?: message)
+                            }
+
+                            override fun onError(errorCode: Int, message: String) {
+                                onFailure(errorCode, message)
+                            }
+                        }
+
+                        NaverIdLoginSDK.authenticate(context, callback)
+                    },
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text("N", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Spacer(Modifier.size(8.dp))
+                        Text(
+                            if (uiState.isLoading) "로그인 중..." else "네이버아이디로 로그인",
+                            color = Color.White,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                         )
