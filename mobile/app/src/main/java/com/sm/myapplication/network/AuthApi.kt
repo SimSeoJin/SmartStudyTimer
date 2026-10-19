@@ -2,6 +2,7 @@ package com.sm.myapplication.network
 
 import com.sm.myapplication.network.dto.AuthResponse
 import com.sm.myapplication.network.dto.DevLoginRequest
+import com.sm.myapplication.network.dto.GoogleTokenRequest
 import com.sm.myapplication.network.dto.JoinRequest
 import com.sm.myapplication.network.dto.KakaoTokenRequest
 import com.sm.myapplication.network.dto.LoginRequest
@@ -22,6 +23,9 @@ interface AuthApi {
 
     @POST("auth/naver")
     suspend fun naverLogin(@Body request: NaverTokenRequest): Response<AuthResponse>
+
+    @POST("auth/google")
+    suspend fun googleLogin(@Body request: GoogleTokenRequest): Response<AuthResponse>
 
     @POST("auth/dev-login")
     suspend fun devLogin(@Body request: DevLoginRequest): Response<AuthResponse>

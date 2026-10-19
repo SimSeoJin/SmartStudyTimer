@@ -15,6 +15,7 @@ import com.sm.myapplication.network.dto.DDayRequest
 import com.sm.myapplication.network.dto.DevLoginRequest
 import com.sm.myapplication.network.dto.ErrorResponse
 import com.sm.myapplication.network.dto.JoinRequest
+import com.sm.myapplication.network.dto.GoogleTokenRequest
 import com.sm.myapplication.network.dto.KakaoTokenRequest
 import com.sm.myapplication.network.dto.NaverTokenRequest
 import com.sm.myapplication.network.dto.LoginRequest
@@ -253,6 +254,16 @@ class AppRepository(
 
     suspend fun loginWithNaver(naverAccessToken: String): Result<Unit> = runCatching {
         val response = ApiClient.authApi.naverLogin(NaverTokenRequest(naverAccessToken))
+        val body = response.body()
+        if (!response.isSuccessful || body == null) {
+            throw Exception(parseErrorMessage(response.errorBody()?.string()))
+        }
+        prefs.saveSession(body.accessToken, body.memberId, body.name)
+        onLoggedIn(body.memberId)
+    }
+
+    suspend fun loginWithGoogle(googleAccessToken: String): Result<Unit> = runCatching {
+        val response = ApiClient.authApi.googleLogin(GoogleTokenRequest(googleAccessToken))
         val body = response.body()
         if (!response.isSuccessful || body == null) {
             throw Exception(parseErrorMessage(response.errorBody()?.string()))

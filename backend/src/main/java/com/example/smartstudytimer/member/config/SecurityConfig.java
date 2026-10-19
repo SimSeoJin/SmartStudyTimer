@@ -21,7 +21,8 @@ public class SecurityConfig {
     private static final String[] PUBLIC_PATHS = {
             "/hello", "/join", "/login",
             "/login/oauth2/code/kakao", "/auth/kakao", "/auth/dev-login",
-            "/login/oauth2/code/naver", "/auth/naver"
+            "/login/oauth2/code/naver", "/auth/naver",
+            "/login/oauth2/code/google", "/auth/google"
     };
 
     private final JwtProvider jwtProvider;

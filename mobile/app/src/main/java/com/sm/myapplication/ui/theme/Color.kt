@@ -78,5 +78,8 @@ val KakaoYellow = Color(0xFFFEE500)
 // 네이버 로그인
 val NaverGreen = Color(0xFF03C75A)
 
+// 구글 로그인
+val GoogleBlue = Color(0xFF4285F4)
+
 // 보라 액센트 (있음)
 val PurpleAccent = Color(0xFF4A3780)

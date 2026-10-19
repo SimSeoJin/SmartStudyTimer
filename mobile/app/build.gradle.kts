@@ -120,6 +120,9 @@ dependencies {
     // 네이버 로그인
     implementation("com.navercorp.nid:oauth:5.10.0")
 
+    // 구글 로그인 (AuthorizationClient: 액세스 토큰 발급)
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+
     // CameraX
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")
