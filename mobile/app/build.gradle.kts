@@ -17,6 +17,14 @@ val localProperties = Properties().apply {
 val kakaoNativeAppKey: String =
     (localProperties.getProperty("KAKAO_NATIVE_APP_KEY") ?: "REPLACE_WITH_KAKAO_NATIVE_APP_KEY")
 
+// 네이버 로그인 Client ID/Secret: local.properties(git에 커밋되지 않음)에서 읽음.
+// 없으면 플레이스홀더를 쓰므로, 실제 네이버 로그인을 테스트하려면 Naver Developers에서
+// 발급받은 Client ID/Secret을 local.properties에 추가해야 함.
+val naverClientId: String =
+    (localProperties.getProperty("NAVER_CLIENT_ID") ?: "REPLACE_WITH_NAVER_CLIENT_ID")
+val naverClientSecret: String =
+    (localProperties.getProperty("NAVER_CLIENT_SECRET") ?: "REPLACE_WITH_NAVER_CLIENT_SECRET")
+
 // 백엔드 서버 주소: local.properties의 API_BASE_URL을 읽음. 에뮬레이터는 10.0.2.2가 호스트 PC를
 // 가리키지만, 실기기는 PC의 실제 LAN IP(같은 Wi-Fi여야 함)를 넣어야 함.
 val apiBaseUrl: String =
@@ -39,6 +47,8 @@ android {
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+        buildConfigField("String", "NAVER_CLIENT_ID", "\"$naverClientId\"")
+        buildConfigField("String", "NAVER_CLIENT_SECRET", "\"$naverClientSecret\"")
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("Boolean", "DEV_MODE", "$devMode")
 
@@ -106,6 +116,12 @@ dependencies {
 
     // 카카오 로그인
     implementation("com.kakao.sdk:v2-user:2.25.0")
+
+    // 네이버 로그인
+    implementation("com.navercorp.nid:oauth:5.10.0")
+
+    // 구글 로그인 (AuthorizationClient: 액세스 토큰 발급)
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // CameraX
     implementation("androidx.camera:camera-core:1.3.4")

@@ -15,6 +15,14 @@ data class KakaoTokenRequest(
     val accessToken: String,
 )
 
+data class NaverTokenRequest(
+    val accessToken: String,
+)
+
+data class GoogleTokenRequest(
+    val accessToken: String,
+)
+
 data class DevLoginRequest(
     val testUserName: String,
 )

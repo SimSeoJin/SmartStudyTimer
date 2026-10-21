@@ -1,12 +1,18 @@
 package com.sm.myapplication.ui.screens.login
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +29,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -38,9 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
@@ -48,22 +55,46 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.Scope
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.user.UserApiClient
+import com.navercorp.nid.NaverIdLoginSDK
+import com.navercorp.nid.oauth.OAuthLoginCallback
 import com.sm.myapplication.BuildConfig
+import com.sm.myapplication.R
 import com.sm.myapplication.ui.theme.Black50
 import com.sm.myapplication.ui.theme.GreenDark
 import com.sm.myapplication.ui.theme.GreenLight
 import com.sm.myapplication.ui.theme.GreenLighter
 import com.sm.myapplication.ui.theme.GreenPrimary
-import com.sm.myapplication.ui.theme.KakaoYellow
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewModel()) {
     val context = LocalContext.current
     val uiState by viewModel.state
+
+    // 구글은 최초 1회 동의 화면이 필요해서, 동의 결과를 받을 런처를 미리 등록해 둔다.
+    val googleConsentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result ->
+        // 사용자가 동의 화면을 닫은 경우는 에러로 표시하지 않음
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        try {
+            val token = Identity.getAuthorizationClient(context)
+                .getAuthorizationResultFromIntent(result.data).accessToken
+            if (token != null) {
+                viewModel.onGoogleTokenReceived(token, onSuccess = onLoginSuccess)
+            } else {
+                viewModel.onGoogleLoginFailed(null)
+            }
+        } catch (e: Exception) {
+            viewModel.onGoogleLoginFailed(e.message)
+        }
+    }
     var devTestUserName by remember { mutableStateOf("testuser") }
 
     // 배지 주변으로 2초마다 한 번씩 퍼졌다 사라지는 핑 파동
@@ -307,60 +338,126 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                     }
                 }
             } else {
-                Text(
-                    text = "카카오 계정으로 3초만에 시작하기",
-                    color = Black50,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
-                )
-
-                // 카카오 로그인
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = KakaoYellow,
-                    shadowElevation = 6.dp,
-                    onClick = {
-                        if (uiState.isLoading) return@Surface
-
-                        val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
-                            if (token != null) {
-                                viewModel.onKakaoTokenReceived(token.accessToken, onSuccess = onLoginSuccess)
-                            } else if (error != null) {
-                                val cancelled = error is ClientError && error.reason == ClientErrorCause.Cancelled
-                                if (!cancelled) viewModel.onKakaoLoginFailed(error.message)
-                            }
-                        }
-
-                        if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
-                            UserApiClient.instance.loginWithKakaoTalk(context, callback = callback)
-                        } else {
-                            UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
-                        }
-                    },
+                Row(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                    // 카카오 로그인
+                    SocialCircleButton(
+                        enabled = !uiState.isLoading,
+                        onClick = {
+                            val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
+                                if (token != null) {
+                                    viewModel.onKakaoTokenReceived(token.accessToken, onSuccess = onLoginSuccess)
+                                } else if (error != null) {
+                                    val cancelled = error is ClientError && error.reason == ClientErrorCause.Cancelled
+                                    if (!cancelled) viewModel.onKakaoLoginFailed(error.message)
+                                }
+                            }
+
+                            if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                                UserApiClient.instance.loginWithKakaoTalk(context, callback = callback)
+                            } else {
+                                UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+                            }
+                        },
                     ) {
-                        Icon(Icons.Filled.Chat, contentDescription = null, tint = Color(0xFF3C1E1E), modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.size(8.dp))
-                        Text(
-                            if (uiState.isLoading) "로그인 중..." else "카카오계정으로 로그인",
-                            color = Color(0xFF3C1E1E),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
+                        Image(
+                            painter = painterResource(R.drawable.ic_login_kakao),
+                            contentDescription = "카카오 로그인",
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    // 네이버 로그인
+                    SocialCircleButton(
+                        enabled = !uiState.isLoading,
+                        onClick = {
+                            val callback = object : OAuthLoginCallback {
+                                override fun onSuccess() {
+                                    viewModel.onNaverTokenReceived(NaverIdLoginSDK.getAccessToken().orEmpty(), onSuccess = onLoginSuccess)
+                                }
+
+                                override fun onFailure(httpStatus: Int, message: String) {
+                                    viewModel.onNaverLoginFailed(NaverIdLoginSDK.getLastErrorDescription() ?: message)
+                                }
+
+                                override fun onError(errorCode: Int, message: String) {
+                                    onFailure(errorCode, message)
+                                }
+                            }
+
+                            NaverIdLoginSDK.authenticate(context, callback)
+                        },
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_login_naver),
+                            contentDescription = "네이버 로그인",
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    // 구글 로그인
+                    SocialCircleButton(
+                        enabled = !uiState.isLoading,
+                        borderColor = Color(0xFFDADCE0),
+                        onClick = {
+                            val request = AuthorizationRequest.builder()
+                                .setRequestedScopes(listOf(Scope("profile"), Scope("email")))
+                                .build()
+
+                            Identity.getAuthorizationClient(context).authorize(request)
+                                .addOnSuccessListener { result ->
+                                    val pendingIntent = result.pendingIntent
+                                    if (result.hasResolution() && pendingIntent != null) {
+                                        googleConsentLauncher.launch(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
+                                    } else {
+                                        val token = result.accessToken
+                                        if (token != null) {
+                                            viewModel.onGoogleTokenReceived(token, onSuccess = onLoginSuccess)
+                                        } else {
+                                            viewModel.onGoogleLoginFailed(null)
+                                        }
+                                    }
+                                }
+                                .addOnFailureListener { e -> viewModel.onGoogleLoginFailed(e.message) }
+                        },
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_login_google),
+                            contentDescription = "구글 로그인",
+                            modifier = Modifier.fillMaxSize().padding(15.dp),
                         )
                     }
                 }
             }
 
             Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+// 동그란 소셜 로그인 버튼. 로딩 중에는 흐리게 표시하고 클릭을 막는다.
+@Composable
+private fun SocialCircleButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+    borderColor: Color? = null,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .size(58.dp)
+            .alpha(if (enabled) 1f else 0.5f),
+        shape = CircleShape,
+        color = Color.White,
+        border = borderColor?.let { BorderStroke(1.dp, it) },
+        shadowElevation = 4.dp,
+        enabled = enabled,
+        onClick = onClick,
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            content()
         }
     }
 }
