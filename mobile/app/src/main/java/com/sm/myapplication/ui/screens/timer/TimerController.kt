@@ -83,32 +83,45 @@ object TimerController {
             current.pauseCause == TimerPauseCause.WAITING_FACE -> resumeInternal("얼굴 감지 → 자동 시작")
             current.pauseCause == TimerPauseCause.AUTO_FACE_LOST -> resumeInternal("얼굴 다시 감지 → 자동 재개")
             current.pauseCause == TimerPauseCause.CAMERA_OFF -> updateMessage("카메라 켜짐 → 얼굴 감지 대기")
-            current.pauseCause == TimerPauseCause.MANUAL_GESTURE -> updateMessage("수동 일시중지 상태: 손바닥 제스처 필요")
+            current.pauseCause == TimerPauseCause.MANUAL_GESTURE -> updateMessage("수동 일시중지 상태: 주먹 제스처 필요")
             current.pauseCause == TimerPauseCause.USER -> updateMessage("사용자 일시중지 상태")
         }
     }
 
-    fun onFaceLost() {
+    fun onFaceLost(faceAwayTimeoutMs: Long? = null) {
         val current = _state.value
         if (current.mode != StudyMode.PURE) return
 
         if (current.isRunning) {
-            pauseInternal(TimerPauseCause.AUTO_FACE_LOST, "5초 이상 얼굴 미감지 → 자동 일시중지")
+            val prefix = faceAwayTimeoutMs?.let { "${it / 1000}초 이상 " }.orEmpty()
+            pauseInternal(TimerPauseCause.AUTO_FACE_LOST, "${prefix}얼굴 미감지 → 자동 일시중지")
         } else if (current.pauseCause != TimerPauseCause.MANUAL_GESTURE) {
             updateMessage("얼굴 미감지 상태")
         }
     }
 
+    fun onGestureRecognitionChanged(enabled: Boolean) {
+        val current = _state.value
+        if (current.mode != StudyMode.PURE || enabled) return
+
+        if (!current.isRunning && current.pauseCause == TimerPauseCause.MANUAL_GESTURE) {
+            _state.value = current.copy(
+                pauseCause = TimerPauseCause.WAITING_FACE,
+                message = "손 제스처 OFF → 얼굴 감지 대기 중",
+            )
+        }
+    }
+
     fun onStartGesture() {
         val current = _state.value
-        if (current.mode != StudyMode.PURE) return
-        resumeInternal("손바닥 제스처 → 시작/재개")
+        if (current.mode != StudyMode.PURE || current.pauseCause == TimerPauseCause.CAMERA_OFF) return
+        resumeInternal("주먹 제스처 → 시작/재개")
     }
 
     fun onPauseGesture() {
         val current = _state.value
-        if (current.mode != StudyMode.PURE) return
-        pauseInternal(TimerPauseCause.MANUAL_GESTURE, "주먹 제스처 → 수동 일시중지")
+        if (current.mode != StudyMode.PURE || current.pauseCause == TimerPauseCause.CAMERA_OFF) return
+        pauseInternal(TimerPauseCause.MANUAL_GESTURE, "손바닥 제스처 → 수동 일시중지")
     }
 
     fun onCameraOff() {

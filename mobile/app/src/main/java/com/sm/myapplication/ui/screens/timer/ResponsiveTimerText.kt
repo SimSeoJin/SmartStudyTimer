@@ -42,7 +42,7 @@ fun ResponsiveTimerText(
         val density = LocalDensity.current
         val availablePx = with(density) { maxWidth.toPx() }
 
-        val fontSize = remember(text, availablePx, maxFontSize, minFontSize) {
+        val fontSize = remember(text, availablePx, density.fontScale, textMeasurer, maxFontSize, minFontSize) {
             findFittingFontSize(text, availablePx, textMeasurer, maxFontSize, minFontSize)
         }
 
@@ -72,7 +72,12 @@ private fun findFittingFontSize(
     maxFontSize: Float,
     minFontSize: Float,
 ): Float {
-    var low = minFontSize
+    val minWidth = textMeasurer.measure(
+        AnnotatedString(text), style = timerStyle(minFontSize), maxLines = 1,
+    ).size.width
+    // 접근성 글자 확대/좁은 화면에서도 최소 크기 때문에 잘리지 않게 더 줄일 수 있다.
+    val fittingMinimum = if (minWidth <= availableWidthPx) minFontSize else 1f
+    var low = fittingMinimum
     var high = maxFontSize
 
     repeat(12) {
@@ -84,5 +89,5 @@ private fun findFittingFontSize(
         ).size.width
         if (width <= availableWidthPx) low = mid else high = mid
     }
-    return low.coerceIn(minFontSize, maxFontSize)
+    return low.coerceIn(fittingMinimum, maxFontSize)
 }
