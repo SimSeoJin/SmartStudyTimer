@@ -7,6 +7,7 @@ import android.util.Log;
 import com.google.mediapipe.framework.image.BitmapImageBuilder;
 import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.core.BaseOptions;
+import com.google.mediapipe.tasks.components.containers.Landmark;
 import com.google.mediapipe.tasks.vision.core.RunningMode;
 import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizer;
 import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizerResult;
@@ -48,13 +49,14 @@ public class GestureRecognizerHelper {
                             .setModelAssetPath(MODEL_NAME)
                             .build();
 
-            // ImageAnalysis 분석 스레드에서 200ms 간격으로 동기 호출하므로 VIDEO 모드를 유지한다.
-            // 추후 완전한 카메라 스트림 비동기 구조로 바꿀 때는 LIVE_STREAM + resultListener 방식으로 전환 가능하다.
+            // VIDEO is synchronous; FrameAnalyzer runs it on a separate bounded worker,
+            // never on CameraX's face-analysis executor.
             GestureRecognizer.GestureRecognizerOptions options =
                     GestureRecognizer.GestureRecognizerOptions.builder()
                             .setBaseOptions(baseOptions)
                             .setRunningMode(RunningMode.VIDEO)
                             .setNumHands(1)
+                            // Restore the reference project's model thresholds.
                             .setMinHandDetectionConfidence(0.5f)
                             .setMinHandPresenceConfidence(0.5f)
                             .setMinTrackingConfidence(0.5f)
@@ -76,6 +78,37 @@ public class GestureRecognizerHelper {
         return gestureRecognizer != null;
     }
 
+    /** Empty means no supplemental command; strong model commands always win. */
+    public static String handPoseFallbackLabel(GestureRecognizerResult result, String label, float score) {
+        if (result == null || !FistPoseFallback.shouldTry(label, score)
+                || result.worldLandmarks().isEmpty()) return "";
+        float[][] points = firstHandWorldPoints(result);
+        if (FistPoseFallback.isClosedFist(points)) return "Closed_Fist";
+        if (FistPoseFallback.shouldTryPalm(label, score)
+                && FistPoseFallback.isOpenPalm(points)) return "Open_Palm";
+        return "";
+    }
+
+    /** Compatibility wrapper used by the fist-specific model regression test. */
+    public static boolean hasClosedFistPose(GestureRecognizerResult result, String label, float score) {
+        if (result == null || !FistPoseFallback.shouldTry(label, score)
+                || result.worldLandmarks().isEmpty()) return false;
+        return FistPoseFallback.isClosedFist(firstHandWorldPoints(result));
+    }
+
+    private static float[][] firstHandWorldPoints(GestureRecognizerResult result) {
+        java.util.List<Landmark> landmarks = result.worldLandmarks().get(0);
+        if (landmarks.size() != 21) return null;
+        float[][] points = new float[21][3];
+        for (int index = 0; index < 21; index++) {
+            Landmark point = landmarks.get(index);
+            points[index][0] = point.x();
+            points[index][1] = point.y();
+            points[index][2] = point.z();
+        }
+        return points;
+    }
+
     public GestureRecognizerResult recognize(Bitmap bitmap, long timestampMs) {
         if (gestureRecognizer == null) {
             lastErrorMessage = "recognizer is null";
@@ -87,16 +120,18 @@ public class GestureRecognizerHelper {
         }
 
         try {
-            // MediaPipe 예제는 ARGB_8888 비트맵을 넘긴다. 다른 config면 복사해서 맞춘다.
-            Bitmap inputBitmap = bitmap;
-            if (bitmap.getConfig() != Bitmap.Config.ARGB_8888) {
-                inputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false);
-            }
+            // MPImage.close() recycles its bitmap. Give it an owned copy because the
+            // same analysis frame is still needed by the face detector after this call.
+            Bitmap inputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false);
 
             MPImage mpImage = new BitmapImageBuilder(inputBitmap).build();
-            GestureRecognizerResult result = gestureRecognizer.recognizeForVideo(mpImage, timestampMs);
-            lastErrorMessage = "none";
-            return result;
+            try {
+                GestureRecognizerResult result = gestureRecognizer.recognizeForVideo(mpImage, timestampMs);
+                lastErrorMessage = "none";
+                return result;
+            } finally {
+                mpImage.close();
+            }
         } catch (Throwable t) {
             lastErrorMessage = t.getClass().getSimpleName() + " / " + String.valueOf(t.getMessage());
             Log.e(TAG, "GestureRecognizer recognize failed", t);
