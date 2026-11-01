@@ -1,39 +1,57 @@
 package com.sm.myapplication.ui.theme
 
 import android.app.Activity
-import android.os.Build
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 private val AppColorScheme = lightColorScheme(
-    primary = GreenPrimary,
-    onPrimary = White,
-    primaryContainer = BgGreenLight,
-    onPrimaryContainer = GreenDark,
+    primary = PartyRed,
+    onPrimary = Paper,
+    primaryContainer = PartyTint,
+    onPrimaryContainer = PartyRedDark,
 
-    secondary = GreenDark,
-    onSecondary = White,
-    secondaryContainer = GreenLighter,
-    onSecondaryContainer = Black,
+    secondary = Ink,
+    onSecondary = Paper,
+    secondaryContainer = PaperDeep,
+    onSecondaryContainer = Ink,
 
-    tertiary = PurpleAccent,
-    onTertiary = White,
+    tertiary = ApprovedGreen,
+    onTertiary = Paper,
 
-    background = White,
-    onBackground = Black,
+    background = PaperShade,
+    onBackground = Ink,
 
-    surface = White,
-    onSurface = Black,
-    surfaceVariant = BgGray,
-    onSurfaceVariant = Black50,
+    surface = Paper,
+    onSurface = Ink,
+    surfaceVariant = PaperDeep,
+    onSurfaceVariant = LabelSecondary,
+    surfaceContainerHigh = Paper,
 
-    outline = Gray,
-    outlineVariant = GrayLight,
+    outline = Separator,
+    outlineVariant = Separator,
+)
+
+/** 포스터 인쇄물처럼 모서리를 거의 세우지 않는다. */
+object PosterShape {
+    val Small = RoundedCornerShape(3.dp)
+    val Medium = RoundedCornerShape(4.dp)
+    val Large = RoundedCornerShape(6.dp)
+}
+
+private val AppShapes = Shapes(
+    extraSmall = PosterShape.Small,
+    small = PosterShape.Small,
+    medium = PosterShape.Medium,
+    large = PosterShape.Large,
+    extraLarge = PosterShape.Large,
 )
 
 @Composable
@@ -44,7 +62,7 @@ fun MyApplicationTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = BgGreenLight.toArgb()
+            window.statusBarColor = PaperShade.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
         }
     }
@@ -52,6 +70,7 @@ fun MyApplicationTheme(
     MaterialTheme(
         colorScheme = AppColorScheme,
         typography = Typography,
+        shapes = AppShapes,
         content = content
     )
 }

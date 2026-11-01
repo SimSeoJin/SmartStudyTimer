@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,29 +64,24 @@ import com.sm.myapplication.ui.components.SectionHeader
 import com.sm.myapplication.ui.components.SettingRow
 import com.sm.myapplication.ui.components.DestructiveButton
 import com.sm.myapplication.ui.components.pressable
-import com.sm.myapplication.ui.theme.AccentGreen
+import com.sm.myapplication.ui.theme.PartyRed
 import com.sm.myapplication.ui.theme.AccentInk
-import com.sm.myapplication.ui.theme.AccentTint
-import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.PartyTint
+import com.sm.myapplication.ui.theme.Paper
 import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.FillGray
-import com.sm.myapplication.ui.theme.Green300
-import com.sm.myapplication.ui.theme.Green500
-import com.sm.myapplication.ui.theme.Green700
-import com.sm.myapplication.ui.theme.Green900
-import com.sm.myapplication.ui.theme.GroupedBg
+import com.sm.myapplication.ui.theme.IconOlive
+import com.sm.myapplication.ui.theme.IconRed
+import com.sm.myapplication.ui.theme.IconSlate
+import com.sm.myapplication.ui.theme.IconUmber
+import com.sm.myapplication.ui.theme.Ink
+import com.sm.myapplication.ui.theme.PartyRed
+import com.sm.myapplication.ui.theme.PosterShape
+import com.sm.myapplication.ui.theme.PaperShade
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 import com.sm.myapplication.ui.theme.LabelTertiary
-import com.sm.myapplication.ui.theme.SystemBlue
-import com.sm.myapplication.ui.theme.SystemBlueLight
-import com.sm.myapplication.ui.theme.SystemGrayIcon
-import com.sm.myapplication.ui.theme.SystemGrayLight
-import com.sm.myapplication.ui.theme.SystemOrange
-import com.sm.myapplication.ui.theme.SystemOrangeLight
-import com.sm.myapplication.ui.theme.SystemPurple
-import com.sm.myapplication.ui.theme.SystemPurpleLight
-import com.sm.myapplication.ui.theme.SystemRedLight
+import com.sm.myapplication.ui.theme.Separator
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -124,7 +120,7 @@ fun SettingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(GroupedBg),
+            .background(PaperShade),
     ) {
         ProfileHeader(name = name, email = email)
 
@@ -132,17 +128,17 @@ fun SettingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .offset(y = (-26).dp)
-                .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-                .background(GroupedBg)
+                .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                .background(PaperShade)
                 .verticalScroll(rememberScrollState())
                 .padding(top = 16.dp),
         ) {
             InsetCard {
                 SettingRow(
                     title = "알림",
-                    subtitle = "공부 종료·목표 달성 알림 받기",
+                    subtitle = "실적 보고·목표 달성 통지 받기",
                     icon = Icons.Rounded.Notifications,
-                    iconColors = listOf(SystemRedLight, Destructive),
+                    iconColor = IconRed,
                     trailing = {
                         AppSwitch(
                             checked = notificationsEnabled,
@@ -162,7 +158,7 @@ fun SettingScreen(
                     title = "프로필",
                     subtitle = "이름, 생년월일, 학력·학년",
                     icon = Icons.Rounded.Person,
-                    iconColors = listOf(SystemBlueLight, SystemBlue),
+                    iconColor = IconSlate,
                     value = education.takeIf { it.isNotBlank() },
                     showChevron = true,
                     onClick = onOpenMyInfo,
@@ -172,7 +168,7 @@ fun SettingScreen(
                     title = "디데이",
                     subtitle = "목표 날짜까지 남은 일수 표시",
                     icon = Icons.Rounded.Flag,
-                    iconColors = listOf(SystemOrangeLight, SystemOrange),
+                    iconColor = IconUmber,
                     value = ddayEpochDay?.let { epoch ->
                         val left = epoch - LocalDate.now().toEpochDay()
                         "$ddayLabel · " + if (left >= 0) "D-$left" else "D+${-left}"
@@ -188,7 +184,7 @@ fun SettingScreen(
                     title = "개인정보 처리방침",
                     subtitle = "수집 항목과 보유 기간",
                     icon = Icons.Rounded.Shield,
-                    iconColors = listOf(SystemGrayLight, SystemGrayIcon),
+                    iconColor = LabelSecondary,
                     showChevron = true,
                     onClick = onOpenPrivacy,
                 )
@@ -197,7 +193,7 @@ fun SettingScreen(
                     title = "도움말",
                     subtitle = "영상으로 사용법 보기",
                     icon = Icons.AutoMirrored.Rounded.HelpOutline,
-                    iconColors = listOf(SystemPurpleLight, SystemPurple),
+                    iconColor = IconOlive,
                     value = "v1.0",
                     showChevron = true,
                     onClick = onOpenHelp,
@@ -217,10 +213,10 @@ fun SettingScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            shape = RoundedCornerShape(20.dp),
-            containerColor = CardWhite,
-            title = { Text("로그아웃할까요?", style = MaterialTheme.typography.titleMedium) },
-            text = { Text("기록한 공부 시간은 그대로 남아 있어요.", style = MaterialTheme.typography.bodyMedium, color = LabelSecondary) },
+            shape = PosterShape.Large,
+            containerColor = Paper,
+            title = { Text("본부를 떠나시겠습니까?", style = MaterialTheme.typography.titleMedium) },
+            text = { Text("동지의 실적은 기록부에 그대로 남습니다.", style = MaterialTheme.typography.bodyMedium, color = LabelSecondary) },
             confirmButton = {
                 TextButton(onClick = { showLogoutDialog = false; onLogout() }) {
                     Text("로그아웃", color = Destructive, style = MaterialTheme.typography.titleSmall)
@@ -235,27 +231,14 @@ fun SettingScreen(
     }
 }
 
-/** 초록 그라데이션 헤더 + 원형 프로필 + 이름 + 밑줄 이메일. */
+/** 먹색 신분증 헤더 + 빨간 테두리 사진칸 + 이름 + 밑줄 이메일. */
 @Composable
 private fun ProfileHeader(name: String, email: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Brush.linearGradient(listOf(Green500, Green700, Green900))),
+            .background(Ink),
     ) {
-        // 은은한 광택
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = (-50).dp)
-                .size(190.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(CardWhite.copy(alpha = 0.22f), Color.Transparent)
-                    )
-                )
-        )
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -263,20 +246,30 @@ private fun ProfileHeader(name: String, email: String) {
                 .padding(top = 6.dp, bottom = 46.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("설정", style = MaterialTheme.typography.headlineSmall, color = CardWhite)
+            Text("설정", style = MaterialTheme.typography.headlineSmall, color = Paper)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "동지 등록증",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = Paper,
+                modifier = Modifier
+                    .clip(PosterShape.Small)
+                    .background(PartyRed)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
             Spacer(Modifier.height(14.dp))
             Box(
                 modifier = Modifier
                     .size(78.dp)
-                    .clip(CircleShape)
-                    .background(CardWhite.copy(alpha = 0.28f)),
+                    .clip(PosterShape.Medium)
+                    .border(2.dp, PartyRed, PosterShape.Medium),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier = Modifier
                         .size(70.dp)
-                        .clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(Color(0xFFD8EFE0), Green300))),
+                        .clip(PosterShape.Small)
+                        .background(Paper),
                     contentAlignment = Alignment.Center,
                 ) {
                     val initial = name.trim().takeIf { it.isNotEmpty() }?.take(1)
@@ -284,13 +277,13 @@ private fun ProfileHeader(name: String, email: String) {
                         Text(
                             text = initial,
                             style = MaterialTheme.typography.headlineSmall,
-                            color = Green900,
+                            color = Ink,
                         )
                     } else {
                         Icon(
                             Icons.Rounded.Person,
                             contentDescription = null,
-                            tint = Green900,
+                            tint = Ink,
                             modifier = Modifier.size(34.dp),
                         )
                     }
@@ -298,15 +291,15 @@ private fun ProfileHeader(name: String, email: String) {
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                text = name.ifBlank { "이름을 등록해 주세요" },
+                text = name.ifBlank { "이름 미등록 동지" },
                 style = MaterialTheme.typography.titleMedium,
-                color = CardWhite,
+                color = Paper,
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 text = email.ifBlank { "이메일 미등록" },
                 style = MaterialTheme.typography.bodySmall,
-                color = CardWhite.copy(alpha = 0.9f),
+                color = Paper.copy(alpha = 0.9f),
                 textDecoration = TextDecoration.Underline,
             )
         }
@@ -334,7 +327,7 @@ fun MyInfoScreen(onBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -366,15 +359,16 @@ fun MyInfoScreen(onBack: () -> Unit) {
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (selected) AccentGreen else CardWhite)
+                                    .clip(PosterShape.Small)
+                                    .background(if (selected) PartyRed else Paper)
+                                    .border(1.dp, if (selected) PartyRed else Separator, PosterShape.Small)
                                     .pressable { selectedEducation = option; saved = false },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     option,
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = if (selected) CardWhite else LabelPrimary,
+                                    color = if (selected) Paper else LabelPrimary,
                                 )
                             }
                         }
@@ -385,7 +379,7 @@ fun MyInfoScreen(onBack: () -> Unit) {
 
             Spacer(Modifier.height(24.dp))
             PrimaryButton(
-                text = if (saved) "저장했어요" else "저장",
+                text = if (saved) "등록 완료" else "저장",
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 scope.launch {
@@ -432,7 +426,7 @@ fun PrivacyScreen(onBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -497,7 +491,7 @@ private fun PrivacyTable() {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(PosterShape.Small)
             .background(FillGray)
     ) {
         TableRow(listOf("구분", "수집·이용 목적", "수집 항목", "보유 기간"), header = true)
@@ -510,7 +504,7 @@ private fun TableRow(cells: List<String>, header: Boolean = false) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(if (header) AccentTint else Color.Transparent)
+            .background(if (header) PartyTint else Color.Transparent)
     ) {
         cells.forEachIndexed { index, text ->
             Text(
@@ -535,7 +529,7 @@ fun HelpScreen(onBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -559,7 +553,7 @@ fun HelpScreen(onBack: () -> Unit) {
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .height(220.dp)
-                        .clip(RoundedCornerShape(18.dp)),
+                        .clip(PosterShape.Medium),
                 )
             } else {
                 Box(
@@ -567,8 +561,8 @@ fun HelpScreen(onBack: () -> Unit) {
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .height(200.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(AccentTint),
+                        .clip(PosterShape.Medium)
+                        .background(PartyTint),
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -590,6 +584,8 @@ fun HelpScreen(onBack: () -> Unit) {
                 FaqRow("기본 모드와 순공 모드는 뭐가 다른가요?", "기본 모드는 직접 시작·일시정지합니다. 순공 모드는 전면 카메라로 얼굴을 확인해 자리를 비우면 자동으로 멈춥니다.")
                 RowDivider(inset = 16.dp)
                 FaqRow("순공 모드 제스처는 어떻게 쓰나요?", "손바닥을 펴면 수동 일시정지, 주먹을 쥐면 시작·재개됩니다.")
+                RowDivider(inset = 16.dp)
+                FaqRow("카메라 영상이 저장되거나 전송되나요?", "아니요. 얼굴·제스처 인식은 기기 안에서만 처리하고, 영상은 저장하지도 서버로 보내지도 않습니다. 감시는 연출일 뿐입니다.")
                 RowDivider(inset = 16.dp)
                 FaqRow("기록이 저장되지 않아요.", "1초 미만이거나 12시간을 넘는 세션은 오기록으로 보고 저장하지 않습니다.")
             }

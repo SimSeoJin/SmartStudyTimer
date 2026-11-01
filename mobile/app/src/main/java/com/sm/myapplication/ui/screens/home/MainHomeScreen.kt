@@ -1,6 +1,7 @@
 package com.sm.myapplication.ui.screens.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,12 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,10 +28,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sm.myapplication.data.entity.TodoEntity
@@ -43,12 +43,13 @@ import com.sm.myapplication.ui.components.SummaryHeader
 import com.sm.myapplication.ui.components.formatHms
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.theme.AccentInk
-import com.sm.myapplication.ui.theme.AccentTint
-import com.sm.myapplication.ui.theme.CardWhite
-import com.sm.myapplication.ui.theme.Green500
-import com.sm.myapplication.ui.theme.Green700
-import com.sm.myapplication.ui.theme.Green900
-import com.sm.myapplication.ui.theme.GroupedBg
+import com.sm.myapplication.ui.theme.PartyTint
+import com.sm.myapplication.ui.theme.Paper
+import com.sm.myapplication.ui.theme.Ink
+import com.sm.myapplication.ui.theme.PartyRed
+import com.sm.myapplication.ui.theme.PosterShape
+import com.sm.myapplication.ui.theme.Separator
+import com.sm.myapplication.ui.theme.PaperShade
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 import com.sm.myapplication.ui.theme.LabelTertiary
@@ -75,15 +76,15 @@ fun MainHomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .verticalScroll(rememberScrollState()),
     ) {
         SummaryHeader(
             summary = dateText,
             sub = when {
-                state.todoTotal == 0 -> "오늘의 할 일을 추가해 보세요"
-                remaining == 0 -> "오늘 할 일을 모두 끝냈어요 🎉"
-                else -> "할 일 ${remaining}개가 남았어요"
+                state.todoTotal == 0 -> "동지, 오늘의 과업을 등록하십시오"
+                remaining == 0 -> "오늘 과업 완수. 당은 만족합니다"
+                else -> "남은 과업 ${remaining}건"
             },
             trailing = {
                 InitialAvatar(
@@ -118,11 +119,11 @@ fun MainHomeScreen(
                 modifier = Modifier.weight(1f),
             )
             StatCard(
-                label = "나의 티어",
+                label = "나의 계급",
                 value = state.tierName,
                 valueColor = LabelPrimary,
                 caption = null,
-                actionText = "기준표 보기 ›",
+                actionText = "계급표 보기 ›",
                 onAction = onOpenTier,
                 modifier = Modifier.weight(1f),
             )
@@ -148,37 +149,50 @@ private fun TimerHeroCard(
     onStartBasic: () -> Unit,
     onStartPure: () -> Unit,
 ) {
+    // 먹색 선전 벽보. 왼쪽 위 빨간 딱지와 아래 표어로 포스터 느낌을 낸다.
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(Green500, Green700, Green900),
-                )
-            )
+            .clip(PosterShape.Large)
+            .background(Ink)
             .padding(18.dp),
     ) {
         Text(
-            "오늘 누적 공부 시간",
+            "순공부 공보",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 2.sp),
+            color = Paper,
+            modifier = Modifier
+                .clip(PosterShape.Small)
+                .background(PartyRed)
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "오늘의 순공 실적",
             style = MaterialTheme.typography.bodySmall,
-            color = CardWhite.copy(alpha = 0.88f),
+            color = Paper.copy(alpha = 0.75f),
         )
         Spacer(Modifier.height(2.dp))
         Text(
             text = formatHms(elapsedMs),
             style = MaterialTheme.typography.displaySmall,
-            color = CardWhite,
+            color = Paper,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "순공부가 동지를 지켜보고 있습니다",
+            style = MaterialTheme.typography.labelMedium,
+            color = PartyTint,
         )
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .height(40.dp)
-                    .clip(CircleShape)
-                    .background(CardWhite)
+                    .height(42.dp)
+                    .clip(PosterShape.Small)
+                    .background(Paper)
                     .pressable(onClick = onStartBasic),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
@@ -190,18 +204,26 @@ private fun TimerHeroCard(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(4.dp))
-                Text("시작하기", color = AccentInk, style = MaterialTheme.typography.titleSmall)
+                Text("기본 모드", color = AccentInk, style = MaterialTheme.typography.titleSmall)
             }
-            Box(
+            Row(
                 modifier = Modifier
                     .weight(1f)
-                    .height(40.dp)
-                    .clip(CircleShape)
-                    .background(CardWhite.copy(alpha = 0.2f))
+                    .height(42.dp)
+                    .clip(PosterShape.Small)
+                    .background(PartyRed)
                     .pressable(onClick = onStartPure),
-                contentAlignment = Alignment.Center,
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("순공모드", color = CardWhite, style = MaterialTheme.typography.titleSmall)
+                Icon(
+                    Icons.Rounded.Visibility,
+                    contentDescription = null,
+                    tint = Paper,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(5.dp))
+                Text("순공모드", color = Paper, style = MaterialTheme.typography.titleSmall)
             }
         }
     }
@@ -219,8 +241,9 @@ private fun StatCard(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(CardWhite)
+            .clip(PosterShape.Medium)
+            .background(Paper)
+            .border(1.dp, Separator, PosterShape.Medium)
             .pressable(onClick = onAction)
             .padding(14.dp),
     ) {
@@ -265,7 +288,7 @@ private fun TodoMiniCard(
                 .padding(start = 16.dp, end = 12.dp, top = 14.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("오늘의 할 일", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
+            Text("오늘의 과업", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
             if (total > 0) {
                 Spacer(Modifier.width(6.dp))
                 Text(
@@ -278,14 +301,14 @@ private fun TodoMiniCard(
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clip(CircleShape)
-                    .background(AccentTint)
+                    .clip(PosterShape.Small)
+                    .background(PartyTint)
                     .pressable(onClick = onAdd),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     Icons.Rounded.Add,
-                    contentDescription = "할 일 추가",
+                    contentDescription = "과업 등록",
                     tint = AccentInk,
                     modifier = Modifier.size(18.dp),
                 )
@@ -294,7 +317,7 @@ private fun TodoMiniCard(
 
         if (todos.isEmpty()) {
             Text(
-                "아직 등록한 할 일이 없어요.",
+                "아직 하달된 과업이 없습니다.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = LabelSecondary,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 18.dp),

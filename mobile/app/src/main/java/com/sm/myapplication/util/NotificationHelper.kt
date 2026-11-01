@@ -52,6 +52,6 @@ object NotificationHelper {
     }
 
     fun notifyStudyFinished(context: Context, duration: String) {
-        showNotification(context, "공부 완료", "공부가 완료되었습니다. 기록된 시간: $duration")
+        showNotification(context, "실적 보고 완료", "공부 실적이 기록부에 등재되었습니다. 기록된 시간: $duration")
     }
 }

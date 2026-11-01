@@ -38,9 +38,9 @@ import com.sm.myapplication.ui.components.ResponsiveTimerText
 import com.sm.myapplication.ui.components.StatusPill
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.util.NotificationHelper
-import com.sm.myapplication.ui.theme.AccentGreen
+import com.sm.myapplication.ui.theme.PartyRed
 import com.sm.myapplication.ui.theme.Destructive
-import com.sm.myapplication.ui.theme.GroupedBg
+import com.sm.myapplication.ui.theme.PaperShade
 import com.sm.myapplication.ui.theme.LabelSecondary
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -72,7 +72,7 @@ fun BasicModeScreen(onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -108,7 +108,7 @@ fun BasicModeScreen(onBack: () -> Unit) {
 
             // TODO(서버 연동): 순위는 랭킹 API 연결 전까지 표시용 값
             Text(
-                text = "현재 55위",
+                text = "현재 서열 55위",
                 style = MaterialTheme.typography.bodyMedium,
                 color = LabelSecondary,
                 textAlign = TextAlign.Center,
@@ -125,7 +125,7 @@ fun BasicModeScreen(onBack: () -> Unit) {
                 Icon(
                     imageVector = if (state.isRunning) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = if (state.isRunning) "일시정지" else "재개",
-                    tint = AccentGreen,
+                    tint = PartyRed,
                     modifier = Modifier.size(110.dp),
                 )
             }
@@ -140,7 +140,7 @@ fun BasicModeScreen(onBack: () -> Unit) {
         }
 
         GhostButton(
-            text = "세션 종료하고 저장",
+            text = "실적 보고하고 종료",
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             onClick = finish,
         )

@@ -1,6 +1,7 @@
 package com.sm.myapplication.ui.screens.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -49,17 +50,18 @@ import com.sm.myapplication.ui.components.formatDuration
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.screens.home.formatClock
 import com.sm.myapplication.ui.theme.AccentInk
-import com.sm.myapplication.ui.theme.AccentGreen
-import com.sm.myapplication.ui.theme.AccentTint
-import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.PartyRed
+import com.sm.myapplication.ui.theme.PartyTint
+import com.sm.myapplication.ui.theme.Paper
 import com.sm.myapplication.ui.theme.Destructive
-import com.sm.myapplication.ui.theme.FillGray
-import com.sm.myapplication.ui.theme.Green300
-import com.sm.myapplication.ui.theme.GroupedBg
+import com.sm.myapplication.ui.theme.Ink
+import com.sm.myapplication.ui.theme.IconSlate
+import com.sm.myapplication.ui.theme.PosterShape
+import com.sm.myapplication.ui.theme.Separator
+import com.sm.myapplication.ui.theme.PaperShade
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 import com.sm.myapplication.ui.theme.LabelTertiary
-import com.sm.myapplication.ui.theme.SystemBlue
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -77,16 +79,16 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .verticalScroll(rememberScrollState()),
     ) {
         SummaryHeader(
-            summary = "이번 달 누적",
+            summary = "이번 달 순공 실적",
             highlight = if (monthTotalMs > 0) formatKoreanDuration(monthTotalMs) else "0분",
             sub = if (studiedDays > 0) {
-                "공부한 날 ${studiedDays}일 · 하루 평균 ${formatKoreanDuration(averageMs)}"
+                "출석 ${studiedDays}일 · 하루 평균 ${formatKoreanDuration(averageMs)}"
             } else {
-                "이번 달 기록이 아직 없어요"
+                "이번 달 실적이 아직 없습니다"
             },
         )
 
@@ -110,7 +112,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
         if (state.selectedDaySessions.isEmpty()) {
             InsetCard {
                 Text(
-                    "이 날의 공부 기록이 없어요.",
+                    "이 날은 보고된 실적이 없습니다.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = LabelSecondary,
                     modifier = Modifier.padding(16.dp),
@@ -134,7 +136,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(10.dp).clip(CircleShape).background(Destructive))
+                    Box(Modifier.size(10.dp).clip(PosterShape.Small).background(Ink))
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = state.ddayLabel.ifBlank { "D-Day" },
@@ -146,7 +148,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
         }
 
         if (state.selectedDayTodos.isNotEmpty()) {
-            SectionHeader("일정")
+            SectionHeader("과업")
             InsetCard {
                 state.selectedDayTodos.forEachIndexed { index, todo ->
                     TodoRow(todo)
@@ -172,14 +174,14 @@ private fun SessionRow(session: StudySessionEntity) {
         Box(
             modifier = Modifier
                 .size(30.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(if (isPure) FillGray else AccentTint),
+                .clip(PosterShape.Small)
+                .background(if (isPure) Ink else PartyTint),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = if (isPure) Icons.Rounded.DarkMode else Icons.Rounded.PlayArrow,
+                imageVector = if (isPure) Icons.Rounded.Visibility else Icons.Rounded.PlayArrow,
                 contentDescription = null,
-                tint = if (isPure) LabelPrimary else AccentInk,
+                tint = if (isPure) Paper else AccentInk,
                 modifier = Modifier.size(16.dp),
             )
         }
@@ -244,8 +246,9 @@ private fun MonthCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(CardWhite)
+            .clip(PosterShape.Medium)
+            .background(Paper)
+            .border(1.dp, Separator, PosterShape.Medium)
             .padding(horizontal = 10.dp, vertical = 14.dp),
     ) {
         Row(
@@ -272,7 +275,7 @@ private fun MonthCard(
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = when (index) {
                         0 -> Destructive
-                        6 -> SystemBlue
+                        6 -> IconSlate
                         else -> LabelSecondary
                     },
                     textAlign = TextAlign.Center,
@@ -322,8 +325,8 @@ private fun ArrowButton(icon: ImageVector, description: String, onClick: () -> U
     Box(
         modifier = Modifier
             .size(30.dp)
-            .clip(CircleShape)
-            .background(GroupedBg)
+            .clip(PosterShape.Small)
+            .background(PaperShade)
             .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -352,11 +355,11 @@ private fun DayCell(
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clip(CircleShape)
+                    .clip(PosterShape.Small)
                     .background(
                         when {
-                            isSelected -> AccentGreen
-                            isDDay -> Destructive
+                            isSelected -> PartyRed
+                            isDDay -> Ink
                             else -> Color.Transparent
                         }
                     ),
@@ -368,7 +371,7 @@ private fun DayCell(
                         fontWeight = if (isSelected || isToday || isDDay) FontWeight.Bold else FontWeight.Normal,
                     ),
                     color = when {
-                        isSelected || isDDay -> CardWhite
+                        isSelected || isDDay -> Paper
                         isToday -> AccentInk
                         else -> LabelPrimary
                     },
@@ -382,8 +385,8 @@ private fun DayCell(
                     .background(
                         when {
                             studyMs <= 0L -> Color.Transparent
-                            strong -> AccentGreen
-                            else -> Green300
+                            strong -> PartyRed
+                            else -> PartyRed.copy(alpha = 0.4f)
                         }
                     )
             )

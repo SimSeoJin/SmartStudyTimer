@@ -83,7 +83,7 @@ import com.sm.myapplication.ui.screens.timer.TimerController
 import com.sm.myapplication.ui.components.NavBar
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.screens.timer.ResponsiveTimerText
-import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.Paper
 import com.sm.myapplication.ui.theme.DarkStatusBarEffect
 import com.sm.myapplication.ui.theme.FocusRed
 import com.sm.myapplication.ui.theme.FocusCameraTop
@@ -92,6 +92,7 @@ import com.sm.myapplication.ui.theme.FocusBg
 import com.sm.myapplication.ui.theme.FocusSurface
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.FocusGreen
+import com.sm.myapplication.ui.theme.PosterShape
 import com.sm.myapplication.vision.PureModeCameraService
 import com.sm.myapplication.vision.PureModeUserSettings
 import com.sm.myapplication.vision.CameraStatusPolicy
@@ -276,12 +277,12 @@ fun PureModeScreen(onBack: () -> Unit) {
             .statusBarsPadding().navigationBarsPadding(),
     ) {
         Box(Modifier.fillMaxWidth()) {
-            NavBar(title = "순공모드", titleColor = CardWhite)
+            NavBar(title = "순공모드", titleColor = Paper)
             IconButton(
                 onClick = { showSettingsDialog = true },
                 modifier = Modifier.align(Alignment.CenterEnd),
             ) {
-                Icon(Icons.Outlined.Settings, contentDescription = "순공모드 설정", tint = CardWhite)
+                Icon(Icons.Outlined.Settings, contentDescription = "순공모드 설정", tint = Paper)
             }
         }
 
@@ -302,9 +303,13 @@ fun PureModeScreen(onBack: () -> Unit) {
                 if (cameraPreviewVisible) {
                     Box(
                         modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(PosterShape.Large)
                             .background(Brush.linearGradient(listOf(FocusCameraTop, FocusCameraBottom)))
-                            .border(0.5.dp, CardWhite.copy(alpha = 0.14f), RoundedCornerShape(22.dp)),
+                            .border(
+                                if (statusUi.alert) 2.dp else 0.5.dp,
+                                if (statusUi.alert) FocusRed else Paper.copy(alpha = 0.14f),
+                                PosterShape.Large,
+                            ),
                     ) {
                         AndroidView(
                             factory = { viewContext ->
@@ -330,7 +335,11 @@ fun PureModeScreen(onBack: () -> Unit) {
                             modifier = Modifier.align(Alignment.Center).size(width = 150.dp, height = 195.dp)
                                 .border(
                                     1.5.dp,
-                                    if (state.isRunning) FocusGreen.copy(alpha = 0.75f) else CardWhite.copy(alpha = 0.3f),
+                                    when {
+                                        statusUi.alert -> FocusRed.copy(alpha = 0.85f)
+                                        state.isRunning -> FocusGreen.copy(alpha = 0.75f)
+                                        else -> Paper.copy(alpha = 0.3f)
+                                    },
                                     RoundedCornerShape(percent = 48),
                                 ),
                         )
@@ -343,6 +352,12 @@ fun PureModeScreen(onBack: () -> Unit) {
                 TimerLine(big = !cameraPreviewVisible)
                 Spacer(Modifier.height(8.dp))
                 StatusLine(statusUi)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "영상은 저장·전송되지 않습니다",
+                    color = Paper.copy(alpha = 0.4f),
+                    fontSize = 11.sp,
+                )
                 if (!cameraPreviewVisible) Spacer(Modifier.weight(1f))
             }
         }
@@ -472,7 +487,7 @@ private fun PureModeRadioRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(PosterShape.Small)
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -497,15 +512,15 @@ private fun CameraPermissionNotice(modifier: Modifier = Modifier, onRequestPermi
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "카메라 권한이 필요합니다",
-            color = CardWhite,
+            text = "감시 장비(카메라) 권한이 필요합니다",
+            color = Paper,
             fontWeight = FontWeight.SemiBold,
             fontSize = 20.sp,
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            text = "순공모드에서 얼굴과 제스처를 인식하려면\n카메라 사용을 허용해 주세요.",
-            color = CardWhite.copy(alpha = 0.68f),
+            text = "순공모드는 카메라로 얼굴과 제스처를 인식합니다.\n영상은 기기 안에서만 처리되고 저장되지 않습니다.",
+            color = Paper.copy(alpha = 0.68f),
             fontSize = 15.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
@@ -522,6 +537,8 @@ internal data class PureModeStatusUi(
     val icon: ImageVector?,
     val label: String,
     val activeDot: Boolean = false,
+    /** 동지가 자리를 비운 경보 상태. 빨간 테두리와 글자로 표시한다. */
+    val alert: Boolean = false,
 )
 
 internal fun pureModeStatusUi(
@@ -531,21 +548,21 @@ internal fun pureModeStatusUi(
     cameraStatus: String,
 ): PureModeStatusUi {
     if (!isRunning && CameraStatusPolicy.isConnectionFailure(cameraStatus)) {
-        return PureModeStatusUi(Icons.Filled.VideocamOff, "카메라 오류")
+        return PureModeStatusUi(Icons.Filled.VideocamOff, "감시 장비 오류")
     }
 
     return when {
-        pauseCause == TimerPauseCause.CAMERA_OFF -> PureModeStatusUi(Icons.Filled.VideocamOff, "카메라 오류")
-        !isRunning && pauseCause == TimerPauseCause.AUTO_FACE_LOST -> PureModeStatusUi(Icons.Filled.Pause, "얼굴 미감지")
+        pauseCause == TimerPauseCause.CAMERA_OFF -> PureModeStatusUi(Icons.Filled.VideocamOff, "감시 장비 오류")
+        !isRunning && pauseCause == TimerPauseCause.AUTO_FACE_LOST -> PureModeStatusUi(Icons.Filled.Pause, "동지, 자리에 없군요", alert = true)
         !isRunning && pauseCause == TimerPauseCause.MANUAL_GESTURE -> PureModeStatusUi(Icons.Filled.PanTool, "수동 정지")
-        !isRunning && pauseCause == TimerPauseCause.WAITING_FACE -> PureModeStatusUi(Icons.Filled.Person, "얼굴이 보이지 않아요")
+        !isRunning && pauseCause == TimerPauseCause.WAITING_FACE -> PureModeStatusUi(Icons.Filled.Person, "얼굴을 보여 주십시오", alert = true)
         message.contains("손바닥") || message.contains("주먹") -> {
-            PureModeStatusUi(Icons.Filled.PanTool, if (isRunning) "다시 시작" else "일시정지")
+            PureModeStatusUi(Icons.Filled.PanTool, if (isRunning) "복귀를 환영합니다" else "일시정지")
         }
         message.contains("다시") || message.contains("시작") || message.contains("재개") -> {
-            PureModeStatusUi(Icons.Filled.PlayArrow, "다시 시작")
+            PureModeStatusUi(Icons.Filled.PlayArrow, "복귀를 환영합니다")
         }
-        isRunning -> PureModeStatusUi(null, "집중 중", activeDot = true)
+        isRunning -> PureModeStatusUi(null, "순공 인정 중", activeDot = true)
         else -> PureModeStatusUi(Icons.Filled.Pause, "일시정지")
     }
 }
@@ -568,14 +585,14 @@ private fun StatusLine(status: PureModeStatusUi) {
             Icon(
                 imageVector = status.icon,
                 contentDescription = null,
-                tint = CardWhite,
+                tint = if (status.alert) FocusRed else Paper,
                 modifier = Modifier.size(18.dp),
             )
         }
         Spacer(Modifier.width(8.dp))
         Text(
             text = status.label,
-            color = CardWhite,
+            color = if (status.alert) FocusRed else Paper,
             fontWeight = FontWeight.Medium,
             fontSize = 16.sp,
         )
@@ -592,7 +609,7 @@ private fun TimerLine(big: Boolean = false) {
         text = formatElapsedDigits(seconds * 1_000L),
         maxFontSize = if (big) 56f else 48f,
         minFontSize = 24f,
-        color = CardWhite,
+        color = Paper,
     )
 }
 
@@ -600,14 +617,14 @@ private fun TimerLine(big: Boolean = false) {
 private fun PillButton(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(32.dp))
+            .clip(PosterShape.Medium)
             .background(FocusSurface)
-            .border(1.dp, CardWhite.copy(alpha = 0.14f), RoundedCornerShape(32.dp))
+            .border(1.dp, Paper.copy(alpha = 0.14f), PosterShape.Medium)
             .pressable(onClick = onClick)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = CardWhite, fontWeight = FontWeight.Medium, fontSize = 15.sp)
+        Text(label, color = Paper, fontWeight = FontWeight.Medium, fontSize = 15.sp)
     }
 }
 
@@ -626,13 +643,13 @@ private fun PureModeActionButton(
         selected -> FocusGreen.copy(alpha = 0.18f)
         else -> FocusSurface
     }
-    val tint = if (destructive) FocusRed else if (selected) FocusGreen else CardWhite
+    val tint = if (destructive) FocusRed else if (selected) FocusGreen else Paper
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
+            .clip(PosterShape.Medium)
             .background(background)
-            .border(1.dp, CardWhite.copy(alpha = 0.12f), RoundedCornerShape(24.dp))
+            .border(1.dp, Paper.copy(alpha = 0.12f), PosterShape.Medium)
             .pressable(onClick = onClick)
             .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -645,7 +662,7 @@ private fun PureModeActionButton(
             modifier = Modifier.size(22.dp),
         )
         Spacer(Modifier.height(4.dp))
-        Text(label, color = CardWhite, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+        Text(label, color = Paper, fontWeight = FontWeight.Medium, fontSize = 13.sp)
     }
 }
 

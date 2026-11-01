@@ -219,7 +219,7 @@ class PureModeCameraService : LifecycleService() {
 
     private fun createNotification(): Notification = NotificationCompat.Builder(this, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_pure_mode_notification)
-        .setContentTitle("순공모드 실행 중")
+        .setContentTitle("순공부가 지켜보고 있습니다")
         .setContentText(if (lowLightModeEnabled) "학습 타이머 · 저조도 ON" else "학습 타이머 작동 중")
         .setOngoing(true)
         .setOnlyAlertOnce(true)

@@ -44,10 +44,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sm.myapplication.ui.theme.AccentGreen
+import com.sm.myapplication.ui.theme.PartyRed
 import com.sm.myapplication.ui.theme.AccentInk
-import com.sm.myapplication.ui.theme.AccentTint
-import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.Ink
+import com.sm.myapplication.ui.theme.PartyTint
+import com.sm.myapplication.ui.theme.Paper
+import com.sm.myapplication.ui.theme.PaperDeep
+import com.sm.myapplication.ui.theme.PosterShape
 import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
@@ -130,7 +133,7 @@ fun NavBar(
     }
 }
 
-/** 팝업 상단 헤더. 가운데 제목, 우측에 초록 원 안의 검은 X 닫기 버튼(모서리에서 안쪽으로 띄움). */
+/** 팝업 상단 헤더. 가운데 제목, 우측에 먹색 네모 안의 종이색 X 닫기 버튼(모서리에서 안쪽으로 띄움). */
 @Composable
 fun DialogHeader(title: String, onClose: () -> Unit) {
     Box(
@@ -145,15 +148,15 @@ fun DialogHeader(title: String, onClose: () -> Unit) {
                 .align(Alignment.CenterEnd)
                 .padding(end = 16.dp)
                 .size(32.dp)
-                .clip(CircleShape)
-                .background(AccentGreen)
+                .clip(PosterShape.Small)
+                .background(Ink)
                 .pressable(onClick = onClose),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Rounded.Close,
                 contentDescription = "닫기",
-                tint = Color.Black,
+                tint = Paper,
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -220,14 +223,14 @@ fun InitialAvatar(name: String, size: androidx.compose.ui.unit.Dp = 36.dp, modif
     Box(
         modifier = modifier
             .size(size)
-            .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(AccentGreen, AccentInk))),
+            .clip(PosterShape.Small)
+            .background(Ink),
         contentAlignment = Alignment.Center,
     ) {
         if (initial != null) {
             Text(
                 text = initial,
-                color = CardWhite,
+                color = Paper,
                 fontWeight = FontWeight.Bold,
                 fontSize = (size.value * 0.42f).sp,
             )
@@ -235,7 +238,7 @@ fun InitialAvatar(name: String, size: androidx.compose.ui.unit.Dp = 36.dp, modif
             Icon(
                 Icons.Rounded.Person,
                 contentDescription = "프로필",
-                tint = CardWhite,
+                tint = Paper,
                 modifier = Modifier.size(size * 0.55f),
             )
         }
@@ -262,8 +265,9 @@ fun InsetCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = horizontal)
-            .clip(RoundedCornerShape(16.dp))
-            .background(CardWhite),
+            .clip(PosterShape.Medium)
+            .background(Paper)
+            .border(1.dp, Separator, PosterShape.Medium),
         content = content,
     )
 }
@@ -284,7 +288,7 @@ fun SettingRow(
     title: String,
     subtitle: String? = null,
     icon: ImageVector? = null,
-    iconColors: List<Color> = listOf(AccentGreen, AccentInk),
+    iconColor: Color = Ink,
     value: String? = null,
     showChevron: Boolean = false,
     onClick: (() -> Unit)? = null,
@@ -302,11 +306,11 @@ fun SettingRow(
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(Brush.linearGradient(iconColors)),
+                    .clip(PosterShape.Small)
+                    .background(iconColor),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = CardWhite, modifier = Modifier.size(17.dp))
+                Icon(icon, contentDescription = null, tint = Paper, modifier = Modifier.size(17.dp))
             }
             Spacer(Modifier.width(11.dp))
         }
@@ -342,12 +346,12 @@ fun AppSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         checked = checked,
         onCheckedChange = onCheckedChange,
         colors = SwitchDefaults.colors(
-            checkedThumbColor = CardWhite,
-            checkedTrackColor = AccentGreen,
-            checkedBorderColor = AccentGreen,
-            uncheckedThumbColor = CardWhite,
-            uncheckedTrackColor = Color(0xFFE3E3E8),
-            uncheckedBorderColor = Color(0xFFE3E3E8),
+            checkedThumbColor = Paper,
+            checkedTrackColor = PartyRed,
+            checkedBorderColor = PartyRed,
+            uncheckedThumbColor = Paper,
+            uncheckedTrackColor = PaperDeep,
+            uncheckedBorderColor = Separator,
         ),
     )
 }
@@ -357,25 +361,25 @@ fun RoundCheck(checked: Boolean, modifier: Modifier = Modifier, onClick: (() -> 
     Box(
         modifier = modifier
             .size(22.dp)
-            .clip(CircleShape)
-            .then(if (checked) Modifier.background(AccentGreen) else Modifier.border(1.5.dp, LabelTertiary, CircleShape))
+            .clip(PosterShape.Small)
+            .then(if (checked) Modifier.background(PartyRed) else Modifier.border(1.5.dp, LabelSecondary, PosterShape.Small))
             .then(if (onClick != null) Modifier.pressable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         if (checked) {
-            Icon(Icons.Rounded.Check, contentDescription = null, tint = CardWhite, modifier = Modifier.size(15.dp))
+            Icon(Icons.Rounded.Check, contentDescription = null, tint = Paper, modifier = Modifier.size(15.dp))
         }
     }
 }
 
 @Composable
 fun StatusPill(text: String, dark: Boolean = false, active: Boolean = true, modifier: Modifier = Modifier) {
-    val dot = if (dark) com.sm.myapplication.ui.theme.FocusGreen else AccentGreen
+    val dot = if (dark) com.sm.myapplication.ui.theme.FocusGreen else PartyRed
     val fg = if (dark) com.sm.myapplication.ui.theme.FocusGreen else AccentInk
-    val bg = if (dark) com.sm.myapplication.ui.theme.FocusGreen.copy(alpha = 0.18f) else AccentTint
+    val bg = if (dark) com.sm.myapplication.ui.theme.FocusGreen.copy(alpha = 0.18f) else PartyTint
     Row(
         modifier = modifier
-            .clip(CircleShape)
+            .clip(PosterShape.Small)
             .background(if (active) bg else Color(0x14000000))
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -407,8 +411,8 @@ fun PrimaryButton(
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (enabled) AccentGreen else AccentGreen.copy(alpha = 0.35f))
+            .clip(PosterShape.Medium)
+            .background(if (enabled) PartyRed else PartyRed.copy(alpha = 0.35f))
             .pressable(enabled = enabled, onClick = onClick),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -417,7 +421,7 @@ fun PrimaryButton(
             leading()
             Spacer(Modifier.width(6.dp))
         }
-        Text(text, color = CardWhite, style = MaterialTheme.typography.labelLarge)
+        Text(text, color = Paper, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -427,8 +431,9 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(CardWhite)
+            .clip(PosterShape.Medium)
+            .background(Paper)
+            .border(1.5.dp, Ink, PosterShape.Medium)
             .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -442,8 +447,9 @@ fun DestructiveButton(text: String, modifier: Modifier = Modifier, onClick: () -
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(CardWhite)
+            .clip(PosterShape.Medium)
+            .background(Paper)
+            .border(1.5.dp, Destructive, PosterShape.Medium)
             .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

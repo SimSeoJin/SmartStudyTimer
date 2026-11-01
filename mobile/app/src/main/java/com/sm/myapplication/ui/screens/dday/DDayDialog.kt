@@ -38,12 +38,13 @@ import com.sm.myapplication.data.repository.AppRepository
 import com.sm.myapplication.ui.components.DateWheelPicker
 import com.sm.myapplication.ui.components.DialogHeader
 import com.sm.myapplication.ui.components.PrimaryButton
-import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.Paper
 import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.FillGray
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 import com.sm.myapplication.ui.theme.LabelTertiary
+import com.sm.myapplication.ui.theme.PosterShape
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -67,8 +68,8 @@ fun DDayDialog(onClose: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(CardWhite)
+                .clip(PosterShape.Large)
+                .background(Paper)
                 .imePadding(),
         ) {
             DialogHeader(title = "디데이 설정", onClose = onClose)
@@ -113,7 +114,7 @@ private fun FilledField(
     Box(
         modifier = modifier
             .height(46.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(PosterShape.Small)
             .background(FillGray)
             .padding(horizontal = 12.dp),
         contentAlignment = if (center) Alignment.Center else Alignment.CenterStart,

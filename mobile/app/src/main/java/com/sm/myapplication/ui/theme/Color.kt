@@ -2,75 +2,57 @@ package com.sm.myapplication.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary Green - 메인 그린 (BottomNav active, START 버튼, 강조 컬러)
-val GreenPrimary = Color(0xFF8CBC69)
-val GreenDark = Color(0xFF83B360)
-val GreenLight = Color(0xFFBBE395)
-val GreenLighter = Color(0xFFC4EC9E)
-val GreenAccent30 = Color(0x4DC8EDC8)
+// ── 순공부 선전 포스터 팔레트 ──────────────────────────────
+// 바랜 종이 위에 먹색과 당(黨)의 빨강만 쓰는 2도 인쇄 느낌.
 
-// Green variants
-val Green300 = Color(0xFF81C784)
-val Green500 = Color(0xFF4CAF50)
-val Green700 = Color(0xFF388E3C)
-val Green900 = Color(0xFF1B5E20)
+// 종이 (배경·카드). Paper는 어두운 화면 위 글자색으로도 쓴다.
+val PaperShade = Color(0xFFEDE3CF)   // 화면 바탕
+val Paper = Color(0xFFF8F2E6)        // 카드·버튼 면
+val PaperDeep = Color(0xFFE2D5BC)    // 입력칸·표 바탕
 
-// Accent Colors
-val AccentGreen = Color(0xFF4CAF50)
-val AccentInk = Color(0xFF333333)
-val AccentTint = Color(0xFFF5F5F5)
+// 당의 빨강 (주요 버튼, 선택 상태, 강조)
+val PartyRed = Color(0xFFC8372D)
+val PartyRedDark = Color(0xFF9E2A22)
+val PartyTint = Color(0xFFF1D6CC)    // 빨강 옅은 바탕(칩·하이라이트)
 
-// Card & Surface
-val CardWhite = Color(0xFFFFFFFF)
-val Separator = Color(0xFFE0E0E0)
-val GroupedBg = Color(0xFFFAFAFA)
+// 먹색 (글자·굵은 선)
+val Ink = Color(0xFF1B1B1D)
+val AccentInk = Ink
+
+// 순공 인정 (얼굴이 보여 순공으로 집계되는 상태). 포스터 톤에 맞춘 올리브 초록.
+val ApprovedGreen = Color(0xFF6E9B4E)
+
+// 구분선
+val Separator = Color(0xFFD4C6AB)
 
 // Labels
-val LabelPrimary = Color(0xFF000000)
-val LabelSecondary = Color(0xFF666666)
-val LabelTertiary = Color(0xFF999999)
+val LabelPrimary = Ink
+val LabelSecondary = Color(0xFF5C5248)
+val LabelTertiary = Color(0xFF9A8E80)
 
 // Semantic
-val Destructive = Color(0xFFFF3B30)
-val FillGray = Color(0xFFE8E8E8)
+val Destructive = PartyRed
+val FillGray = PaperDeep
 
-// System Colors
-val SystemBlue = Color(0xFF007AFF)
-val SystemBlueLight = Color(0xFF5AC8FA)
-val SystemOrange = Color(0xFFFF9500)
-val SystemOrangeLight = Color(0xFFFFB84D)
-val SystemPurple = Color(0xFF9B59B6)
-val SystemPurpleLight = Color(0xFFBB86FC)
-val SystemRedLight = Color(0xFFFF6B6B)
-val SystemGrayIcon = Color(0xFF999999)
-val SystemGrayLight = Color(0xFFE8E8E8)
+// 설정 아이콘 배경 (포스터 2도 + 보조 톤)
+val IconInk = Ink
+val IconRed = PartyRed
+val IconOlive = ApprovedGreen
+val IconUmber = Color(0xFF8A6A4A)
+val IconSlate = Color(0xFF5A6470)
 
-// Focus Mode Colors
-val FocusBg = Color(0xFF1A1A1D)
-val FocusSurface = Color(0xFF2D2D31)
-val FocusGreen = Color(0xFF4CAF50)
-val FocusRed = Color(0xFFFF3B30)
-val FocusCameraTop = Color(0xFF1A1A1D)
-val FocusCameraBottom = Color(0xFF2D2D31)
-
-// Dark Status Bar Effect
-val DarkStatusBarEffect = Color(0x80000000)
-
-// Background Greens (연두 - 헤더/카드 배경)
-val BgGreenLight = Color(0xFFF0F7E7)
-val BgGreenTint = Color(0xFFFAFFF8)
+// 감시국 (순공모드 어두운 화면)
+val FocusBg = Color(0xFF151517)
+val FocusSurface = Color(0xFF26262A)
+val FocusGreen = ApprovedGreen
+val FocusRed = Color(0xFFE0483C)
+val FocusCameraTop = Color(0xFF151517)
+val FocusCameraBottom = Color(0xFF26262A)
 
 // Surface / Neutral
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
 val Black50 = Color(0x80000000)
-val Black43 = Color(0x6E000000)
-val Gray = Color(0xFFD9D9D9)
-val GrayLight = Color(0xFFDDDDDD)
-val BgGray = Color(0xFFF7F7F7)
-
-// 순공모드 (다크 배경)
-val PureModeBg = Color(0xFF1B1B1D)
 
 // 카카오 로그인
 val KakaoYellow = Color(0xFFFEE500)
@@ -80,6 +62,3 @@ val NaverGreen = Color(0xFF03C75A)
 
 // 구글 로그인
 val GoogleBlue = Color(0xFF4285F4)
-
-// 보라 액센트 (있음)
-val PurpleAccent = Color(0xFF4A3780)

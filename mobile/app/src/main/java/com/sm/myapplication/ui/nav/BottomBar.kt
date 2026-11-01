@@ -33,10 +33,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sm.myapplication.ui.components.pressable
-import com.sm.myapplication.ui.theme.AccentGreen
-import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.PartyRed
+import com.sm.myapplication.ui.theme.Paper
 import com.sm.myapplication.ui.theme.LabelSecondary
-import com.sm.myapplication.ui.theme.Separator
+import com.sm.myapplication.ui.theme.Ink
 
 data class BottomTab(
     val route: String,
@@ -46,9 +46,9 @@ data class BottomTab(
 )
 
 val bottomTabs = listOf(
-    BottomTab(Route.HOME, "홈", Icons.Outlined.Home, Icons.Rounded.Home),
-    BottomTab(Route.CALENDAR, "캘린더", Icons.Outlined.CalendarMonth, Icons.Rounded.CalendarMonth),
-    BottomTab(Route.RANK, "랭킹", Icons.Outlined.EmojiEvents, Icons.Rounded.EmojiEvents),
+    BottomTab(Route.HOME, "본부", Icons.Outlined.Home, Icons.Rounded.Home),
+    BottomTab(Route.CALENDAR, "기록부", Icons.Outlined.CalendarMonth, Icons.Rounded.CalendarMonth),
+    BottomTab(Route.RANK, "서열", Icons.Outlined.EmojiEvents, Icons.Rounded.EmojiEvents),
     BottomTab(Route.SETTING, "설정", Icons.Outlined.Settings, Icons.Rounded.Settings),
 )
 
@@ -60,13 +60,13 @@ fun AppBottomBar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(CardWhite),
+            .background(Paper),
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(0.5.dp)
-                .background(Separator)
+                .height(2.dp)
+                .background(Ink)
         )
         Row(
             modifier = Modifier
@@ -97,7 +97,7 @@ private fun BottomTabItem(
     modifier: Modifier = Modifier,
 ) {
     val tint by animateColorAsState(
-        targetValue = if (selected) AccentGreen else LabelSecondary,
+        targetValue = if (selected) PartyRed else LabelSecondary,
         label = "tabTint",
     )
     Column(

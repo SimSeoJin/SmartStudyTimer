@@ -22,14 +22,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,11 +43,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -66,11 +62,14 @@ import com.navercorp.nid.NaverIdLoginSDK
 import com.navercorp.nid.oauth.OAuthLoginCallback
 import com.sm.myapplication.BuildConfig
 import com.sm.myapplication.R
-import com.sm.myapplication.ui.theme.Black50
-import com.sm.myapplication.ui.theme.GreenDark
-import com.sm.myapplication.ui.theme.GreenLight
-import com.sm.myapplication.ui.theme.GreenLighter
-import com.sm.myapplication.ui.theme.GreenPrimary
+import com.sm.myapplication.ui.theme.Destructive
+import com.sm.myapplication.ui.theme.Ink
+import com.sm.myapplication.ui.theme.LabelSecondary
+import com.sm.myapplication.ui.theme.Paper
+import com.sm.myapplication.ui.theme.PaperShade
+import com.sm.myapplication.ui.theme.PartyRed
+import com.sm.myapplication.ui.theme.PosterShape
+import com.sm.myapplication.ui.theme.Separator
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewModel()) {
@@ -121,45 +120,34 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    0f to GreenLighter.copy(alpha = 0.55f),
-                    0.30f to GreenLighter.copy(alpha = 0.22f),
-                    0.58f to Color.White,
-                    1f to Color.White,
-                )
-            ),
+            .background(PaperShade),
     ) {
-        // 우측 상단에 은은하게 번지는 장식용 블롭 — 화면에 공기감을 더함
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 60.dp, y = (-40).dp)
-                .size(220.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(GreenLight.copy(alpha = 0.35f), Color.Transparent),
-                    )
-                )
-        )
+        // 포스터 위아래를 두르는 굵은 먹색·빨간 띠
+        Column(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
+            Box(Modifier.fillMaxWidth().height(10.dp).background(PartyRed))
+            Box(Modifier.fillMaxWidth().height(3.dp).background(Ink))
+        }
+        Column(Modifier.fillMaxWidth().align(Alignment.BottomCenter)) {
+            Box(Modifier.fillMaxWidth().height(3.dp).background(Ink))
+            Box(Modifier.fillMaxWidth().height(10.dp).background(PartyRed))
+        }
 
         Column(modifier = Modifier.fillMaxSize()) {
             // 헤더
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    .padding(top = 30.dp, start = 16.dp, end = 16.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.White),
+                    modifier = Modifier.size(40.dp).clip(PosterShape.Small).background(Paper),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Black50)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Ink)
                 }
                 Spacer(Modifier.weight(1f))
-                Text("로그인", color = Black50, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                Text("출입 등록", color = Ink, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.size(40.dp))
             }
@@ -167,72 +155,61 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             Spacer(Modifier.weight(1f))
 
             // 브랜드 + 로그인, 화면 중앙에 한 덩어리로 배치
-            // 타이머 배지 — 은은한 글로우 위에 그림자 있는 흰 원판, 그 위에 아이콘
+            // 앱 아이콘과 같은 순공부 포스터 배지. 뒤로 2초마다 빨간 경보 파동이 퍼진다.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .size(148.dp),
+                    .size(160.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier = Modifier
-                        .size(148.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(GreenLight.copy(alpha = 0.6f), Color.Transparent),
-                            )
-                        )
-                )
-                // 2초마다 반복되는 핑 파동
-                Box(
-                    modifier = Modifier
-                        .size(88.dp)
+                        .size(112.dp)
                         .scale(pulseScale)
-                        .clip(CircleShape)
-                        .background(GreenPrimary.copy(alpha = pulseAlpha))
+                        .clip(PosterShape.Large)
+                        .background(PartyRed.copy(alpha = pulseAlpha))
                 )
-                Surface(
-                    modifier = Modifier.size(88.dp),
-                    shape = CircleShape,
-                    color = Color.White,
-                    shadowElevation = 10.dp,
-                ) {}
                 Box(
                     modifier = Modifier
-                        .size(88.dp)
-                        .clip(CircleShape)
-                        .background(Brush.verticalGradient(colors = listOf(GreenPrimary, GreenDark))),
+                        .size(112.dp)
+                        .clip(PosterShape.Large)
+                        .background(PartyRed),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Timer,
+                    Image(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(44.dp),
+                        modifier = Modifier.size(144.dp),
                     )
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(18.dp))
 
             Text(
-                text = "SmartStudyTimer",
-                color = GreenDark,
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                letterSpacing = 0.3.sp,
-                style = androidx.compose.ui.text.TextStyle(
-                    shadow = Shadow(color = Color.Black.copy(alpha = 0.08f), blurRadius = 6f, offset = androidx.compose.ui.geometry.Offset(0f, 2f)),
-                ),
+                text = "순공부",
+                color = Ink,
+                fontWeight = FontWeight.Black,
+                fontSize = 34.sp,
+                letterSpacing = 6.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
 
-                Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
 
             Text(
-                text = "공부 시간을 기록하고\n나만의 페이스를 만들어보세요",
-                color = Black50,
+                text = "딴짓은 패배다 · 순공은 자유다 · 기록은 영원하다",
+                color = PartyRed,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            Text(
+                text = "순공부는 동지의\n순수한 공부 시간만을 인정합니다",
+                color = LabelSecondary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
@@ -246,7 +223,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,
-                    color = Color(0xFFD32F2F),
+                    color = Destructive,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(start = 24.dp, end = 24.dp, bottom = 10.dp),
@@ -259,8 +236,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFF6C63FF),
+                    shape = PosterShape.Medium,
+                    color = Ink,
                     shadowElevation = 6.dp,
                     onClick = {
                         if (uiState.isLoading) return@Surface
@@ -273,8 +250,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            if (uiState.isLoading) "로그인 중..." else "관리자 로그인",
-                            color = Color.White,
+                            if (uiState.isLoading) "출입 확인 중..." else "관리자 로그인",
+                            color = Paper,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                         )
@@ -286,7 +263,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             if (BuildConfig.DEV_MODE) {
                 Text(
                     text = "[개발 모드] 테스트 계정으로 로그인",
-                    color = Black50,
+                    color = LabelSecondary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
@@ -300,12 +277,12 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PosterShape.Small,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedIndicatorColor = GreenPrimary,
-                        unfocusedIndicatorColor = Color.LightGray,
+                        focusedContainerColor = Paper,
+                        unfocusedContainerColor = Paper,
+                        focusedIndicatorColor = PartyRed,
+                        unfocusedIndicatorColor = Separator,
                     ),
                 )
 
@@ -316,8 +293,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = GreenPrimary,
+                    shape = PosterShape.Medium,
+                    color = PartyRed,
                     shadowElevation = 6.dp,
                     onClick = {
                         if (uiState.isLoading || devTestUserName.isBlank()) return@Surface
@@ -330,8 +307,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            if (uiState.isLoading) "로그인 중..." else "테스트 로그인",
-                            color = Color.White,
+                            if (uiState.isLoading) "출입 확인 중..." else "테스트 로그인",
+                            color = Paper,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                         )

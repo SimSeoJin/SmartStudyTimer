@@ -41,7 +41,7 @@ object NotificationHelper {
             2001,
             NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("공부 기록이 저장됐어요")
+                .setContentTitle("실적이 기록부에 등재되었습니다")
                 .setContentText("오늘 공부한 시간 $durationText")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)

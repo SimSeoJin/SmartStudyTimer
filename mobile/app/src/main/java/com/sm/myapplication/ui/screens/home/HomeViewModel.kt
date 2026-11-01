@@ -19,7 +19,7 @@ data class HomeUiState(
     val ddayEpochDay: Long? = null,
     val ddayLabel: String = "기말 고사",
     val todayStudyMs: Long = 0L,
-    val tierName: String = "다이아",
+    val tierName: String = "모범 당원",
 )
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {

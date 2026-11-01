@@ -1,6 +1,7 @@
 package com.sm.myapplication.ui.screens.todo
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,14 +58,16 @@ import com.sm.myapplication.ui.components.SectionHeader
 import com.sm.myapplication.ui.components.TimeWheelPicker
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.screens.home.formatClock
-import com.sm.myapplication.ui.theme.AccentGreen
+import com.sm.myapplication.ui.theme.PartyRed
 import com.sm.myapplication.ui.theme.AccentInk
-import com.sm.myapplication.ui.theme.AccentTint
-import com.sm.myapplication.ui.theme.CardWhite
-import com.sm.myapplication.ui.theme.GroupedBg
+import com.sm.myapplication.ui.theme.PartyTint
+import com.sm.myapplication.ui.theme.Paper
+import com.sm.myapplication.ui.theme.PaperShade
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 import com.sm.myapplication.ui.theme.LabelTertiary
+import com.sm.myapplication.ui.theme.PosterShape
+import com.sm.myapplication.ui.theme.Separator
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -83,7 +86,7 @@ fun TodoListScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
@@ -91,7 +94,7 @@ fun TodoListScreen(
 
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                LargeTitle(title = "오늘의 할 일", caption = dateText)
+                LargeTitle(title = "오늘의 과업", caption = dateText)
 
                 if (state.activeTodos.isEmpty() && state.completedTodos.isEmpty()) {
                     Spacer(Modifier.height(40.dp))
@@ -99,10 +102,10 @@ fun TodoListScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text("아직 할 일이 없어요", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
+                        Text("하달된 과업이 없습니다", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "아래 버튼으로 오늘 할 일을 추가해 보세요.",
+                            "아래 버튼으로 오늘의 과업을 등록하십시오.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = LabelSecondary,
                         )
@@ -134,7 +137,7 @@ fun TodoListScreen(
         }
 
         PrimaryButton(
-            text = "＋  추가",
+            text = "＋  과업 등록",
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
             onClick = onAdd,
         )
@@ -163,8 +166,8 @@ private fun TodoRow(todo: TodoEntity, onToggle: () -> Unit) {
         if (todo.category != TodoCategory.GENERAL) {
             Box(
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(AccentTint)
+                    .clip(PosterShape.Small)
+                    .background(PartyTint)
                     .padding(horizontal = 8.dp, vertical = 3.dp),
             ) {
                 Text(categoryLabel(todo.category), style = MaterialTheme.typography.labelSmall, color = AccentInk)
@@ -207,21 +210,21 @@ fun TodoAddScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(GroupedBg)
+            .background(PaperShade)
             .statusBarsPadding()
             .navigationBarsPadding()
             .imePadding(),
     ) {
         NavBar(
-            title = "일정 추가",
+            title = "과업 등록",
             onBack = onBack,
             backLabel = "취소",
         )
 
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            SectionHeader("할 일")
+            SectionHeader("과업")
             InsetCard {
-                FieldRow(label = "이름", value = title, placeholder = "무엇을 할까요?") { title = it }
+                FieldRow(label = "이름", value = title, placeholder = "무엇을 완수하겠습니까?") { title = it }
             }
 
             SectionHeader("분류")
@@ -317,8 +320,9 @@ private fun CategoryChip(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (selected) AccentGreen else CardWhite)
+            .clip(PosterShape.Medium)
+            .background(if (selected) PartyRed else Paper)
+            .border(1.dp, if (selected) PartyRed else Separator, PosterShape.Medium)
             .pressable(onClick = onClick)
             .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -326,14 +330,14 @@ private fun CategoryChip(
         Icon(
             imageVector = categoryIcon(category),
             contentDescription = null,
-            tint = if (selected) CardWhite else AccentInk,
+            tint = if (selected) Paper else AccentInk,
             modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.height(5.dp))
         Text(
             categoryLabel(category),
             style = MaterialTheme.typography.labelMedium,
-            color = if (selected) CardWhite else LabelSecondary,
+            color = if (selected) Paper else LabelSecondary,
         )
     }
 }
