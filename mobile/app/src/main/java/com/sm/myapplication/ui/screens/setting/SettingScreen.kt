@@ -53,6 +53,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.sm.myapplication.data.datastore.AppPreferences
+import com.sm.myapplication.network.ApiClient
+import com.sm.myapplication.network.dto.MemberInfoResponse
+import com.sm.myapplication.network.dto.MemberUpdateRequest
 import com.sm.myapplication.util.NotificationHelper
 import com.sm.myapplication.ui.components.AppSwitch
 import com.sm.myapplication.ui.components.InsetCard
@@ -90,8 +93,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-private val educationOptions = listOf("중학생", "고1", "고2", "고3", "N수생", "대학생")
-
 @Composable
 fun SettingScreen(
     onOpenMyInfo: () -> Unit,
@@ -107,16 +108,12 @@ fun SettingScreen(
     var notificationsEnabled by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var education by remember { mutableStateOf("") }
     var ddayLabel by remember { mutableStateOf("") }
     var ddayEpochDay by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
         notificationsEnabled = prefs.notificationsEnabled.first()
         name = prefs.memberName.first()
-        email = prefs.email.first()
-        education = prefs.education.first()
         ddayLabel = prefs.ddayLabel.first()
         ddayEpochDay = prefs.ddayEpochDay.first()
     }
@@ -126,7 +123,7 @@ fun SettingScreen(
             .fillMaxSize()
             .background(GroupedBg),
     ) {
-        ProfileHeader(name = name, email = email)
+        ProfileHeader(name = name)
 
         Column(
             modifier = Modifier
@@ -160,10 +157,9 @@ fun SettingScreen(
             InsetCard {
                 SettingRow(
                     title = "프로필",
-                    subtitle = "이름, 생년월일, 학력·학년",
+                    subtitle = "랭킹에 표시되는 닉네임",
                     icon = Icons.Rounded.Person,
                     iconColors = listOf(SystemBlueLight, SystemBlue),
-                    value = education.takeIf { it.isNotBlank() },
                     showChevron = true,
                     onClick = onOpenMyInfo,
                 )
@@ -235,9 +231,9 @@ fun SettingScreen(
     }
 }
 
-/** 초록 그라데이션 헤더 + 원형 프로필 + 이름 + 밑줄 이메일. */
+/** 초록 그라데이션 헤더 + 원형 프로필 + 이름. */
 @Composable
-private fun ProfileHeader(name: String, email: String) {
+private fun ProfileHeader(name: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -302,15 +298,17 @@ private fun ProfileHeader(name: String, email: String) {
                 style = MaterialTheme.typography.titleMedium,
                 color = CardWhite,
             )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = email.ifBlank { "이메일 미등록" },
-                style = MaterialTheme.typography.bodySmall,
-                color = CardWhite.copy(alpha = 0.9f),
-                textDecoration = TextDecoration.Underline,
-            )
         }
     }
+}
+
+/** 서버 oauth_provider 값을 화면 표시용 이름으로. 아이디/비밀번호 가입이면 아이디를 보여준다. */
+private fun loginAccountLabel(info: MemberInfoResponse?): String = when (info?.oauthProvider) {
+    null -> info?.loginId?.let { "아이디 ($it)" } ?: "-"
+    "kakao" -> "카카오"
+    "naver" -> "네이버"
+    "google" -> "구글"
+    else -> info.oauthProvider
 }
 
 @Composable
@@ -318,18 +316,30 @@ fun MyInfoScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { AppPreferences(context.applicationContext) }
     val scope = rememberCoroutineScope()
-    var name by remember { mutableStateOf("") }
-    var birth by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var selectedEducation by remember { mutableStateOf(educationOptions.first()) }
-    var saved by remember { mutableStateOf(false) }
+    var memberId by remember { mutableStateOf<Long?>(null) }
+    var nickname by remember { mutableStateOf("") }
+    var savedNickname by remember { mutableStateOf("") }
+    var memberInfo by remember { mutableStateOf<MemberInfoResponse?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var saving by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        name = prefs.memberName.first()
-        birth = prefs.birthDate.first()
-        email = prefs.email.first()
-        selectedEducation = prefs.education.first()
+        nickname = prefs.memberName.first()
+        savedNickname = nickname
+        val id = prefs.memberId.first() ?: return@LaunchedEffect
+        memberId = id
+        // 서버 닉네임이 기준. 실패하면 로컬에 저장된 이름으로 그대로 보여준다.
+        runCatching { ApiClient.memberApi.get(id) }.getOrNull()
+            ?.takeIf { it.isSuccessful }?.body()?.let { info ->
+                memberInfo = info
+                nickname = info.nickname
+                savedNickname = info.nickname
+                prefs.setMemberName(info.nickname)
+            }
     }
+
+    val trimmed = nickname.trim()
+    val canSave = !saving && memberId != null && trimmed.isNotEmpty() && trimmed != savedNickname
 
     Column(
         Modifier
@@ -344,59 +354,76 @@ fun MyInfoScreen(onBack: () -> Unit) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
-            SectionHeader("기본 정보")
+            SectionHeader("닉네임")
             InsetCard {
-                FieldRow("이름", name, "홍길동") { name = it; saved = false }
-                RowDivider(inset = 16.dp)
-                FieldRow("생년월일", birth, "2007.01.01") { birth = it; saved = false }
-                RowDivider(inset = 16.dp)
-                FieldRow("이메일", email, "example@email.com") { email = it; saved = false }
+                FieldRow("닉네임", nickname, "닉네임을 입력해 주세요") {
+                    nickname = it.take(MAX_NICKNAME_LENGTH)
+                    message = null
+                }
             }
+            Text(
+                text = message ?: "랭킹에서 다른 사람에게 보이는 이름이에요.",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (message != null && message != SAVED_MESSAGE) Destructive else LabelSecondary,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
+            )
 
-            SectionHeader("학력 · 학년")
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                educationOptions.chunked(3).forEach { rowOptions ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        rowOptions.forEach { option ->
-                            val selected = option == selectedEducation
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (selected) AccentGreen else CardWhite)
-                                    .pressable { selectedEducation = option; saved = false },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    option,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = if (selected) CardWhite else LabelPrimary,
-                                )
-                            }
-                        }
-                        repeat(3 - rowOptions.size) { Spacer(Modifier.weight(1f)) }
-                    }
+            SectionHeader("로그인 계정")
+            InsetCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "로그인 방식",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LabelPrimary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        loginAccountLabel(memberInfo),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LabelSecondary,
+                    )
                 }
             }
 
             Spacer(Modifier.height(24.dp))
             PrimaryButton(
-                text = if (saved) "저장했어요" else "저장",
+                text = if (saving) "저장 중…" else "저장",
+                enabled = canSave,
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
+                val id = memberId ?: return@PrimaryButton
+                saving = true
                 scope.launch {
-                    prefs.setUserProfile(name, email, selectedEducation, birth)
-                    saved = true
+                    val response = runCatching {
+                        ApiClient.memberApi.update(id, MemberUpdateRequest(trimmed))
+                    }.getOrNull()
+                    message = when {
+                        response == null -> "저장하지 못했어요. 네트워크 연결을 확인해 주세요."
+                        response.isSuccessful -> {
+                            val newName = response.body()?.nickname ?: trimmed
+                            prefs.setMemberName(newName)
+                            nickname = newName
+                            savedNickname = newName
+                            SAVED_MESSAGE
+                        }
+                        response.code() == 409 -> "이미 사용 중인 닉네임이에요."
+                        else -> "저장하지 못했어요. 잠시 후 다시 시도해 주세요."
+                    }
+                    saving = false
                 }
             }
             Spacer(Modifier.height(28.dp))
         }
     }
 }
+
+private const val MAX_NICKNAME_LENGTH = 20
+private const val SAVED_MESSAGE = "닉네임을 저장했어요."
 
 @Composable
 private fun FieldRow(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit) {
@@ -489,10 +516,9 @@ fun PrivacyScreen(onBack: () -> Unit) {
 @Composable
 private fun PrivacyTable() {
     val rows = listOf(
-        listOf("회원 가입 및 관리", "가입 의사 확인, 서비스 제공, 회원자격 유지·관리, 부정이용 방지, 고충처리", "이메일, 비밀번호, 닉네임", "탈퇴 후 지체없이 파기"),
-        listOf("부모 인증", "만 14세 미만 가입 시 법정대리인 인증", "법정대리인 이름·휴대전화 번호", "인증 완료 후 즉시 파기"),
-        listOf("서비스 이용", "부정이용 방지, 맞춤 서비스 제공, 이용 통계 분석", "서비스 이용 기록, 접속 IP", "탈퇴 후 지체없이 파기"),
-        listOf("유료 서비스", "재화의 구매 및 결제, 요금정산", "결제 기록", "서비스 해지 시까지"),
+        // 서버 DB(member, study_record, daily_summary, study_summary, todo, dday)에 실제 저장되는 항목 기준.
+        listOf("회원 가입 및 관리", "회원 식별, 로그인, 회원자격 유지·관리", "아이디, 비밀번호, 닉네임 (SNS 가입 시 SNS 종류·고유 식별값, 닉네임)", "탈퇴 후 지체없이 파기"),
+        listOf("서비스 제공", "공부 시간 기록·통계, 랭킹·티어 산정, 할 일·디데이 관리", "순공 모드 공부 기록(시작·종료 시각), 할 일, 디데이", "탈퇴 후 지체없이 파기"),
     )
     Column(
         Modifier

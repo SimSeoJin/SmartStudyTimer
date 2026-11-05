@@ -59,5 +59,6 @@ object ApiClient {
     val studyApi: StudyApi = retrofit.create(StudyApi::class.java)
     val todoApi: TodoApi = retrofit.create(TodoApi::class.java)
     val ddayApi: DDayApi = retrofit.create(DDayApi::class.java)
+    val memberApi: MemberApi = retrofit.create(MemberApi::class.java)
     val rankingApi: RankingApi = retrofit.create(RankingApi::class.java)
 }
