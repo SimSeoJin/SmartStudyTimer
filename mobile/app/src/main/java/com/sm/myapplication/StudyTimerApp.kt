@@ -16,7 +16,7 @@ class StudyTimerApp : Application() {
             this,
             BuildConfig.NAVER_CLIENT_ID,
             BuildConfig.NAVER_CLIENT_SECRET,
-            "SmartStudyTimer",
+            "STUDY EYE",
         )
         syncWhenNetworkReturns()
     }
