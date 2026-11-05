@@ -18,6 +18,7 @@ import com.sm.myapplication.network.dto.JoinRequest
 import com.sm.myapplication.network.dto.GoogleTokenRequest
 import com.sm.myapplication.network.dto.KakaoTokenRequest
 import com.sm.myapplication.network.dto.NaverTokenRequest
+import com.sm.myapplication.network.dto.RankingResponse
 import com.sm.myapplication.network.dto.LoginRequest
 import com.sm.myapplication.network.dto.StudyRecordRequest
 import com.sm.myapplication.network.dto.TodoRequest
@@ -198,7 +199,8 @@ class AppRepository(
                 dateEpochDay = dateEpochDay,
             )
         )
-        syncStudySessionToServer(start, end)
+        // 서버 기록은 랭킹·티어 산정용이라 순공 모드만 보낸다. 일반 타이머 기록은 로컬(Room)에만 남는다.
+        if (mode == StudyMode.PURE) syncStudySessionToServer(start, end)
     }
 
     // 로그인 안 한 상태거나 네트워크가 안 되면 조용히 실패 — 로컬 기록(Room)은 이미 저장됐으므로 사용자 경험엔 영향 없음.
@@ -216,6 +218,32 @@ class AppRepository(
         }.onSuccess { response ->
             if (!response.isSuccessful) Log.w(TAG, "공부 기록 전송 실패: HTTP ${response.code()}")
         }.onFailure { Log.w(TAG, "공부 기록 전송 실패", it) }
+    }
+
+    /** 랭킹 화면용 데이터. 네트워크 실패면 null. */
+    data class RankingSnapshot(val all: List<RankingResponse>, val myMemberId: Long?)
+
+    suspend fun fetchRanking(): RankingSnapshot? {
+        val myId = prefs.memberId.first()
+        val response = runCatching { ApiClient.rankingApi.getAll() }
+            .onFailure { Log.w(TAG, "랭킹 조회 실패", it) }
+            .getOrNull() ?: return null
+        if (!response.isSuccessful) {
+            Log.w(TAG, "랭킹 조회 실패: HTTP ${response.code()}")
+            return null
+        }
+        return RankingSnapshot(response.body().orEmpty(), myId)
+    }
+
+    /** 내 티어(서버 이름). 최근 7일 기록이 없으면 NO_RANK, 미로그인·네트워크 실패면 null. */
+    suspend fun fetchMyTier(): String? {
+        val myId = prefs.memberId.first() ?: return null
+        val response = runCatching { ApiClient.rankingApi.getMine(myId) }.getOrNull() ?: return null
+        return when {
+            response.isSuccessful -> response.body()?.tierName
+            response.code() == 404 -> NO_RANK
+            else -> null
+        }
     }
 
     fun observeTodaySessionMs(day: Long) = studySessionDao.observeTotalMsByDate(day)
@@ -305,6 +333,8 @@ class AppRepository(
 
     companion object {
         private const val TAG = "AppRepository"
+        /** fetchMyTier(): 최근 7일 기록이 없어 랭킹에 없음 */
+        const val NO_RANK = "__NO_RANK__"
         @Volatile private var INSTANCE: AppRepository? = null
         fun get(context: Context): AppRepository {
             return INSTANCE ?: synchronized(this) {

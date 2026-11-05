@@ -28,7 +28,7 @@ public class RankingServiceImpl implements RankingService {
     public RankingResponse getMyRanking(Long memberId) {
         return rankingRepository.findById(memberId)
                 .map(this::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("해당 회원의 랭킹 데이터가 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("최근 7일 공부 기록이 없어 랭킹에 포함되지 않습니다."));
     }
 
     private RankingResponse toResponse(RankingView v) {

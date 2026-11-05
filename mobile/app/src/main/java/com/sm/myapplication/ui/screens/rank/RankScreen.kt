@@ -2,7 +2,6 @@ package com.sm.myapplication.ui.screens.rank
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,11 +23,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.mutableFloatStateOf
+import com.sm.myapplication.network.dto.tierDisplayName
+import com.sm.myapplication.data.repository.AppRepository
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +47,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.sm.myapplication.ui.components.AppSwitch
 import com.sm.myapplication.ui.components.InsetCard
 import com.sm.myapplication.ui.components.DialogHeader
 import com.sm.myapplication.ui.components.RowDivider
@@ -56,121 +64,164 @@ import com.sm.myapplication.ui.theme.GroupedBg
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 
-// TODO(서버 연동): 랭킹 API가 붙기 전까지 쓰는 표시용 더미 데이터
-private data class RankRow(val rank: Int, val name: String, val time: String, val isMe: Boolean = false)
-private data class TopRanker(val rank: Int, val name: String, val time: String, val barHeight: Int)
+private data class RankRow(val rank: Long, val name: String, val time: String, val isMe: Boolean = false)
+private data class TopRanker(val rank: Long, val name: String, val time: String, val barHeight: Int)
 
-private val FILTERS = listOf("친구", "전체", "고1", "고2", "고3", "대학생")
-private val DUMMY_TOP3 = listOf(
-    TopRanker(2, "김철수", "12h 40m", 62),
-    TopRanker(1, "이서연", "15h 02m", 88),
-    TopRanker(3, "김영희", "11h 15m", 50),
-)
-private val DUMMY_LIST = listOf(
-    RankRow(4, "이연주", "11:11:11"),
-    RankRow(5, "박서준", "10:48:02"),
-    RankRow(6, "정하늘", "09:30:44"),
-    RankRow(7, "최민지", "08:57:10"),
-    RankRow(55, "나", "01:24:36", isMe = true),
-)
-private const val MY_RANK = 55
+/** 목록에 보여줄 최대 순위(4위~). 내가 그 밖이면 맨 아래에 따로 붙인다. */
+private const val LIST_LIMIT = 30
+
+private sealed interface RankLoad {
+    data object Loading : RankLoad
+    data object Failed : RankLoad
+    data class Loaded(val snapshot: AppRepository.RankingSnapshot) : RankLoad
+}
+
+/** 초 → "01:24:36" */
+private fun formatHms(seconds: Long): String =
+    "%02d:%02d:%02d".format(seconds / 3600, seconds % 3600 / 60, seconds % 60)
+
+/** 초 → "12h 40m" */
+private fun formatHm(seconds: Long): String = "${seconds / 3600}h %02dm".format(seconds % 3600 / 60)
 
 @Composable
 fun RankScreen(onOpenTier: () -> Unit) {
-    var pureModeOnly by remember { mutableStateOf(true) }
-    var selectedFilter by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
+    val repo = remember { AppRepository.get(context.applicationContext) }
+    var load by remember { mutableStateOf<RankLoad>(RankLoad.Loading) }
 
-    Column(
+    LaunchedEffect(Unit) {
+        load = repo.fetchRanking()?.let { RankLoad.Loaded(it) } ?: RankLoad.Failed
+    }
+
+    val snapshot = (load as? RankLoad.Loaded)?.snapshot
+    val all = snapshot?.all.orEmpty()
+    val me = all.firstOrNull { it.memberId == snapshot?.myMemberId }
+
+    val sub = when {
+        load is RankLoad.Loading -> "랭킹을 불러오는 중…"
+        load is RankLoad.Failed -> "랭킹을 불러오지 못했어요"
+        me != null -> "이번 주 나의 순위 ${me.rankPosition}위 · 티어 ${tierDisplayName(me.tierName)}"
+        else -> "최근 7일 순공 기록이 없어 아직 순위가 없어요"
+    }
+
+    // 하단 고정 '내 순위' 줄: 목록 속 내 줄이 화면 아래로 벗어나 있을 때만 보인다.
+    // 스크롤해서 내 줄이 고정 줄 위치까지 올라오면 고정 줄을 숨겨, 목록과 함께 위로 올라가는 것처럼 보이게 한다.
+    var viewportBottom by remember { mutableFloatStateOf(0f) }
+    var myRowBottom by remember { mutableFloatStateOf(Float.MAX_VALUE) }
+    val pinnedGapPx = with(LocalDensity.current) { PINNED_BOTTOM_GAP.toPx() }
+
+    // 목록: 4위 ~ LIST_LIMIT위. 내가 그 밖이면 '⋯' 다음에 내 줄을 붙인다.
+    val listRows = all.drop(3).take(LIST_LIMIT - 3).map {
+        RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), isMe = it.memberId == me?.memberId)
+    }
+    val myRow = me?.let { RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), isMe = true) }
+    val meOutsideList = me != null && all.indexOf(me) >= LIST_LIMIT
+    val meInList = meOutsideList || listRows.any { it.isMe }
+    val showPinned = myRow != null && meInList && viewportBottom > 0f &&
+        myRowBottom > viewportBottom - pinnedGapPx + 1f
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(GroupedBg)
-            .verticalScroll(rememberScrollState()),
+            .onGloballyPositioned { viewportBottom = it.boundsInWindow().bottom },
     ) {
-        SummaryHeader(
-            summary = "이번 주 나의 순위",
-            highlight = "${MY_RANK}위",
-            sub = "${FILTERS[selectedFilter]} 기준 · 티어는 다이아",
-            trailing = {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(AccentTint)
-                        .pressable(onClick = onOpenTier)
-                        .padding(horizontal = 12.dp, vertical = 7.dp),
-                ) {
-                    Text(
-                        "티어표",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = AccentInk,
-                    )
-                }
-            },
-        )
-
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
         ) {
-            FILTERS.forEachIndexed { index, name ->
-                FilterChip(label = name, selected = selectedFilter == index) { selectedFilter = index }
-            }
-        }
+            SummaryHeader(
+                summary = "랭킹",
+                sub = sub,
+                trailing = {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(AccentTint)
+                            .pressable(onClick = onOpenTier)
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
+                    ) {
+                        Text(
+                            "티어표",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = AccentInk,
+                        )
+                    }
+                },
+            )
 
-        Spacer(Modifier.height(20.dp))
-
-        Podium(DUMMY_TOP3)
-
-        Spacer(Modifier.height(16.dp))
-
-        InsetCard {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .pressable { pureModeOnly = !pureModeOnly }
-                    .padding(start = 16.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            if (snapshot != null && all.isEmpty()) {
                 Text(
-                    "순공 모드만 보기",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = LabelPrimary,
-                    modifier = Modifier.weight(1f),
+                    "아직 이번 주 순공 기록이 있는 사람이 없어요.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LabelSecondary,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
                 )
-                AppSwitch(checked = pureModeOnly, onCheckedChange = { pureModeOnly = it })
             }
+
+            if (all.isNotEmpty()) {
+                Spacer(Modifier.height(20.dp))
+
+                // 시상대는 2위-1위-3위 순서로 배치
+                val barHeights = listOf(88, 62, 50)
+                val top3 = all.take(3).mapIndexed { i, r ->
+                    TopRanker(r.rankPosition, r.nickname, formatHm(r.totalTime), barHeights[i])
+                }
+                val podiumOrder = listOfNotNull(top3.getOrNull(1), top3.getOrNull(0), top3.getOrNull(2))
+                Podium(podiumOrder)
+
+                Spacer(Modifier.height(16.dp))
+
+                val trackMyRow = Modifier.onGloballyPositioned { myRowBottom = it.positionInWindow().y + it.size.height }
+                if (listRows.isNotEmpty() || meOutsideList) {
+                    InsetCard {
+                        listRows.forEachIndexed { index, row ->
+                            RankListRow(row, if (row.isMe) trackMyRow else Modifier)
+                            if (index != listRows.lastIndex || meOutsideList) RowDivider(inset = 16.dp)
+                        }
+                        if (meOutsideList && myRow != null) {
+                            EllipsisRow()
+                            RowDivider(inset = 16.dp)
+                            RankListRow(myRow, trackMyRow)
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        InsetCard {
-            DUMMY_LIST.forEachIndexed { index, row ->
-                RankListRow(row)
-                if (index != DUMMY_LIST.lastIndex) RowDivider(inset = 16.dp)
+        if (showPinned && myRow != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 16.dp, end = 16.dp, bottom = PINNED_BOTTOM_GAP)
+                    .shadow(8.dp, RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(CardWhite),
+            ) {
+                RankListRow(myRow)
             }
         }
-
-        Spacer(Modifier.height(24.dp))
     }
 }
 
+/** 하단 고정 '내 순위' 줄과 화면 아래 끝 사이 간격 */
+private val PINNED_BOTTOM_GAP = 8.dp
+
+/** 30위와 내 순위 사이가 생략됐음을 보여주는 줄 */
 @Composable
-private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
+private fun EllipsisRow() {
+    Text(
+        text = "⋯",
+        style = MaterialTheme.typography.titleMedium,
+        color = LabelSecondary,
+        textAlign = TextAlign.Center,
         modifier = Modifier
-            .clip(CircleShape)
-            .background(if (selected) AccentGreen else CardWhite)
-            .pressable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = if (selected) CardWhite else LabelSecondary,
-        )
-    }
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+    )
 }
 
 @Composable
@@ -190,7 +241,7 @@ private fun Podium(top3: List<TopRanker>) {
 
 @Composable
 private fun PodiumColumn(ranker: TopRanker, modifier: Modifier = Modifier) {
-    val isFirst = ranker.rank == 1
+    val isFirst = ranker.rank == 1L
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (isFirst) {
             Icon(
@@ -235,9 +286,9 @@ private fun PodiumColumn(ranker: TopRanker, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun RankListRow(row: RankRow) {
+private fun RankListRow(row: RankRow, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(if (row.isMe) AccentTint else Color.Transparent)
             .padding(horizontal = 16.dp, vertical = 11.dp),
@@ -279,12 +330,14 @@ private fun RankListRow(row: RankRow) {
 
 @Composable
 fun TierRankDialog(onClose: () -> Unit) {
+    // 서버 tier_meta(Diamond 4 / Platinum 15 / Gold 45 / Silver 80 / Bronze 100)와 같은 기준.
+    // 최근 7일 공부시간 순위의 상위 % 로 정해지며, 최근 7일 기록이 없으면 랭킹·티어에서 제외된다.
     val tiers = listOf(
-        Triple("공부 신", "하루 평균 10시간 이상", Green900),
-        Triple("공부 마스터", "하루 평균 7시간 이상", Green700),
-        Triple("공부중독", "하루 평균 5시간 이상", AccentGreen),
-        Triple("공부 입문", "하루 평균 3시간 이상", Green300),
-        Triple("공부 새싹", "하루 평균 1시간 이상", Color(0xFFC9E9D4)),
+        Triple("다이아", "상위 4% 이내", Green900),
+        Triple("플래티넘", "상위 15% 이내", Green700),
+        Triple("골드", "상위 45% 이내", AccentGreen),
+        Triple("실버", "상위 80% 이내", Green300),
+        Triple("브론즈", "그 외 (최근 7일 공부 기록이 있는 회원)", Color(0xFFC9E9D4)),
     )
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
