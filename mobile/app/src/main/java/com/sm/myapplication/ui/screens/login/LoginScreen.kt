@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -73,7 +71,6 @@ import com.sm.myapplication.BuildConfig
 import com.sm.myapplication.R
 import com.sm.myapplication.ui.theme.Black50
 import com.sm.myapplication.ui.theme.GreenDark
-import com.sm.myapplication.ui.theme.GreenLight
 import com.sm.myapplication.ui.theme.GreenLighter
 import com.sm.myapplication.ui.theme.GreenPrimary
 
@@ -135,20 +132,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                 )
             ),
     ) {
-        // 우측 상단에 은은하게 번지는 장식용 블롭 — 화면에 공기감을 더함
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 60.dp, y = (-40).dp)
-                .size(220.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(GreenLight.copy(alpha = 0.35f), Color.Transparent),
-                    )
-                )
-        )
-
         // 카카오톡에 카카오계정이 연결되지 않은 경우 등 실패 시 카카오계정 로그인으로 재시도
         // (사용자가 직접 취소한 경우는 제외)
         val startKakaoLogin: () -> Unit = {
@@ -175,25 +158,15 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
         }
 
         Column(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = 24.dp)) {
-            Spacer(Modifier.weight(0.7f))
+            Spacer(Modifier.weight(1f))
 
-            // 브랜드: 타이머 배지 — 은은한 글로우 위에 그림자 있는 흰 원판, 그 위에 아이콘
+            // 브랜드: 앱 아이콘 배지 + 2초마다 퍼지는 파동 (효과는 이것 하나만)
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .size(148.dp),
+                    .size(140.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(148.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(GreenLight.copy(alpha = 0.6f), Color.Transparent),
-                            )
-                        )
-                )
                 // 2초마다 반복되는 핑 파동
                 Box(
                     modifier = Modifier
@@ -206,7 +179,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                     modifier = Modifier.size(88.dp),
                     shape = CircleShape,
                     color = Color.White,
-                    shadowElevation = 10.dp,
+                    shadowElevation = 4.dp,
                 ) {}
                 // 앱 런처 아이콘(T16a)과 같은 모습: 108 캔버스 중 런처가 보여주는 가운데 72 영역을 원에 맞춤.
                 // 전경의 연두 외곽선이 배경색(#8CBC69 = GreenPrimary)과 같아야 하므로 단색 배경을 쓴다.
@@ -229,13 +202,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
 
             Text(
                 text = "STUDY EYE",
-                color = GreenDark,
+                color = BrandInk,
                 fontWeight = FontWeight.Bold,
                 fontSize = 26.sp,
                 letterSpacing = 0.3.sp,
-                style = androidx.compose.ui.text.TextStyle(
-                    shadow = Shadow(color = Color.Black.copy(alpha = 0.08f), blurRadius = 6f, offset = androidx.compose.ui.geometry.Offset(0f, 2f)),
-                ),
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
 
@@ -269,7 +239,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(0.45f))
 
             val errorMessage = uiState.errorMessage
             if (errorMessage != null) {
@@ -351,12 +321,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_login_kakao),
+                        Icon(
+                            painter = painterResource(R.drawable.ic_kakao_symbol),
                             contentDescription = null,
-                            modifier = Modifier.size(30.dp),
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp),
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             if (uiState.isLoading) "로그인 중..." else "카카오로 시작하기",
                             color = Color.Black.copy(alpha = 0.85f),
@@ -451,6 +422,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
 
 /** 카카오 로그인 버튼 배경색 (카카오 디자인 가이드) */
 private val KakaoYellow = Color(0xFFFEE500)
+
+/** 로그인 화면 브랜드 이름 색: 앱 아이콘 연두와 같은 계열의 진한 톤 (연두 배경에서도 읽히도록) */
+private val BrandInk = Color(0xFF3D6B27)
 
 // 로그인 화면의 기능 소개 한 줄: 아이콘 + 제목 + 설명
 @Composable
