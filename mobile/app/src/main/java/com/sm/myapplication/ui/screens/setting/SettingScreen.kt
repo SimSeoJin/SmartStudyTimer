@@ -72,7 +72,6 @@ import com.sm.myapplication.ui.theme.AccentTint
 import com.sm.myapplication.ui.theme.CardWhite
 import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.FillGray
-import com.sm.myapplication.ui.theme.GreenLight
 import com.sm.myapplication.ui.theme.Green300
 import com.sm.myapplication.ui.theme.Green500
 import com.sm.myapplication.ui.theme.Green700
@@ -81,8 +80,15 @@ import com.sm.myapplication.ui.theme.GroupedBg
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 import com.sm.myapplication.ui.theme.LabelTertiary
+import com.sm.myapplication.ui.theme.SystemBlue
+import com.sm.myapplication.ui.theme.SystemBlueLight
 import com.sm.myapplication.ui.theme.SystemGrayIcon
 import com.sm.myapplication.ui.theme.SystemGrayLight
+import com.sm.myapplication.ui.theme.SystemOrange
+import com.sm.myapplication.ui.theme.SystemOrangeLight
+import com.sm.myapplication.ui.theme.SystemPurple
+import com.sm.myapplication.ui.theme.SystemPurpleLight
+import com.sm.myapplication.ui.theme.SystemRedLight
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -133,7 +139,7 @@ fun SettingScreen(
                     title = "알림",
                     subtitle = "공부 종료·목표 달성 알림 받기",
                     icon = Icons.Rounded.Notifications,
-                    iconColors = listOf(GreenLight, Green500),
+                    iconColors = listOf(SystemRedLight, Destructive),
                     trailing = {
                         AppSwitch(
                             checked = notificationsEnabled,
@@ -153,7 +159,7 @@ fun SettingScreen(
                     title = "프로필",
                     subtitle = "랭킹에 표시되는 닉네임",
                     icon = Icons.Rounded.Person,
-                    iconColors = listOf(Green300, Green700),
+                    iconColors = listOf(SystemBlueLight, SystemBlue),
                     showChevron = true,
                     onClick = onOpenMyInfo,
                 )
@@ -162,7 +168,7 @@ fun SettingScreen(
                     title = "디데이",
                     subtitle = "목표 날짜까지 남은 일수 표시",
                     icon = Icons.Rounded.Flag,
-                    iconColors = listOf(GreenLight, Green500),
+                    iconColors = listOf(SystemOrangeLight, SystemOrange),
                     value = ddayEpochDay?.let { epoch ->
                         val left = epoch - LocalDate.now().toEpochDay()
                         "$ddayLabel · " + if (left >= 0) "D-$left" else "D+${-left}"
@@ -187,7 +193,7 @@ fun SettingScreen(
                     title = "도움말",
                     subtitle = "영상으로 사용법 보기",
                     icon = Icons.AutoMirrored.Rounded.HelpOutline,
-                    iconColors = listOf(Green300, Green700),
+                    iconColors = listOf(SystemPurpleLight, SystemPurple),
                     value = "v1.0",
                     showChevron = true,
                     onClick = onOpenHelp,
