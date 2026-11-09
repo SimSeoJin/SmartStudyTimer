@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.positionInWindow
@@ -53,6 +54,7 @@ import com.sm.myapplication.ui.components.DialogHeader
 import com.sm.myapplication.ui.components.RowDivider
 import com.sm.myapplication.ui.components.SummaryHeader
 import com.sm.myapplication.ui.components.TierBadge
+import com.sm.myapplication.ui.components.formatStudyDuration
 import com.sm.myapplication.ui.components.tierBadgeRes
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.theme.AccentGreen
@@ -80,13 +82,8 @@ private sealed interface RankLoad {
     data class Loaded(val snapshot: AppRepository.RankingSnapshot) : RankLoad
 }
 
-/** 초 → "01:24:36" */
-private fun formatHms(seconds: Long): String =
-    "%02d:%02d:%02d".format(seconds / 3600, seconds % 3600 / 60, seconds % 60)
-
-/** 초 → "12h 40m" */
-private fun formatHm(seconds: Long): String =
-    if (seconds in 1 until 60) "<1m" else "${seconds / 3600}h %02dm".format(seconds % 3600 / 60)
+/** 초 → "32시간 35분" (앱 공용 표기. 시계 시각처럼 보이는 "32:35:00" 대신) */
+private fun formatRankTime(seconds: Long): String = formatStudyDuration(seconds * 1_000L)
 
 @Composable
 fun RankScreen(onOpenTier: () -> Unit) {
@@ -117,9 +114,9 @@ fun RankScreen(onOpenTier: () -> Unit) {
 
     // 목록: 4위 ~ LIST_LIMIT위. 내가 그 밖이면 '⋯' 다음에 내 줄을 붙인다.
     val listRows = all.drop(3).take(LIST_LIMIT - 3).map {
-        RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), it.tierName, isMe = it.memberId == me?.memberId)
+        RankRow(it.rankPosition, it.nickname, formatRankTime(it.totalTime), it.tierName, isMe = it.memberId == me?.memberId)
     }
-    val myRow = me?.let { RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), it.tierName, isMe = true) }
+    val myRow = me?.let { RankRow(it.rankPosition, it.nickname, formatRankTime(it.totalTime), it.tierName, isMe = true) }
     val meOutsideList = me != null && all.indexOf(me) >= LIST_LIMIT
     val meInList = meOutsideList || listRows.any { it.isMe }
     val showPinned = myRow != null && meInList && viewportBottom > 0f &&
@@ -171,7 +168,7 @@ fun RankScreen(onOpenTier: () -> Unit) {
                 // 시상대는 2위-1위-3위 순서로 배치
                 val barHeights = listOf(88, 62, 50)
                 val top3 = all.take(3).mapIndexed { i, r ->
-                    TopRanker(r.rankPosition, r.nickname, formatHm(r.totalTime), r.tierName, barHeights[i])
+                    TopRanker(r.rankPosition, r.nickname, formatRankTime(r.totalTime), r.tierName, barHeights[i])
                 }
                 // 2·3위가 없어도 자리를 비워 둬서 시상대 모양을 유지한다
                 Podium(second = top3.getOrNull(1), first = top3[0], third = top3.getOrNull(2))
@@ -323,7 +320,13 @@ private fun PodiumColumn(ranker: TopRanker, modifier: Modifier = Modifier) {
             )
         }
         Spacer(Modifier.height(6.dp))
-        Text(ranker.name, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = LabelPrimary)
+        Text(
+            ranker.name,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = LabelPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Text(ranker.time, style = MaterialTheme.typography.labelSmall, color = LabelSecondary)
         Spacer(Modifier.height(6.dp))
         Box(
@@ -383,8 +386,11 @@ private fun RankListRow(row: RankRow, modifier: Modifier = Modifier) {
                 fontWeight = if (row.isMe) FontWeight.Bold else FontWeight.Normal,
             ),
             color = LabelPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         Text(
             text = row.time,
             style = MaterialTheme.typography.bodySmall.copy(
