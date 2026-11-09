@@ -32,16 +32,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sm.myapplication.data.datastore.AppPreferences
 import com.sm.myapplication.data.entity.StudyMode
 import com.sm.myapplication.data.repository.AppRepository
-import com.sm.myapplication.ui.components.GhostButton
+import com.sm.myapplication.ui.components.PrimaryButton
 import com.sm.myapplication.ui.components.NavBar
 import com.sm.myapplication.ui.components.ResponsiveTimerText
 import com.sm.myapplication.ui.components.StatusPill
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.util.NotificationHelper
 import com.sm.myapplication.ui.theme.AccentGreen
-import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.GroupedBg
 import com.sm.myapplication.ui.theme.LabelSecondary
+import com.sm.myapplication.ui.theme.LabelTertiary
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -76,12 +76,8 @@ fun BasicModeScreen(onBack: () -> Unit) {
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
-        NavBar(
-            title = "기본 모드",
-            actionLabel = "종료",
-            actionColor = Destructive,
-            onAction = finish,
-        )
+        // 종료는 아래 버튼 하나로만 (빨간 "종료"는 '저장 안 함'으로 읽히는데 실제로는 저장돼 헷갈렸음)
+        NavBar(title = "일반 타이머")
 
         Column(
             modifier = Modifier
@@ -106,11 +102,11 @@ fun BasicModeScreen(onBack: () -> Unit) {
 
             Spacer(Modifier.height(10.dp))
 
-            // TODO(서버 연동): 순위는 랭킹 API 연결 전까지 표시용 값
+            // 랭킹·티어는 순공모드 시간만 반영된다
             Text(
-                text = "현재 55위",
-                style = MaterialTheme.typography.bodyMedium,
-                color = LabelSecondary,
+                text = "일반 타이머 기록은 랭킹에 반영되지 않아요",
+                style = MaterialTheme.typography.bodySmall,
+                color = LabelTertiary,
                 textAlign = TextAlign.Center,
             )
 
@@ -139,8 +135,8 @@ fun BasicModeScreen(onBack: () -> Unit) {
             )
         }
 
-        GhostButton(
-            text = "세션 종료하고 저장",
+        PrimaryButton(
+            text = "공부 끝내고 저장",
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             onClick = finish,
         )

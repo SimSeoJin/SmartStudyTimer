@@ -90,7 +90,7 @@ fun MainHomeScreen(
         SummaryHeader(
             summary = dateText,
             sub = when {
-                state.todoTotal == 0 -> "오늘의 할 일을 추가해 보세요"
+                state.todoTotal == 0 -> "오늘도 순공 시작해 볼까요?"
                 remaining == 0 -> "오늘 할 일을 모두 끝냈어요 🎉"
                 else -> "할 일 ${remaining}개가 남았어요"
             },

@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.WorkspacePremium
@@ -57,6 +58,8 @@ import com.sm.myapplication.ui.components.SectionHeader
 import com.sm.myapplication.ui.components.TimeWheelPicker
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.screens.home.formatClock
+import com.sm.myapplication.ui.theme.BgGreenLight
+import com.sm.myapplication.ui.theme.Green700
 import com.sm.myapplication.ui.theme.AccentGreen
 import com.sm.myapplication.ui.theme.AccentInk
 import com.sm.myapplication.ui.theme.AccentTint
@@ -99,6 +102,21 @@ fun TodoListScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(BgGreenLight),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Checklist,
+                                contentDescription = null,
+                                tint = Green700,
+                                modifier = Modifier.size(36.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
                         Text("아직 할 일이 없어요", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
                         Spacer(Modifier.height(4.dp))
                         Text(

@@ -146,14 +146,14 @@ fun DialogHeader(title: String, onClose: () -> Unit) {
                 .padding(end = 16.dp)
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(AccentGreen)
+                .background(AccentTint)
                 .pressable(onClick = onClose),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Rounded.Close,
                 contentDescription = "닫기",
-                tint = Color.Black,
+                tint = LabelSecondary,
                 modifier = Modifier.size(18.dp),
             )
         }
