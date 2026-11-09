@@ -70,8 +70,9 @@ import com.navercorp.nid.oauth.OAuthLoginCallback
 import com.sm.myapplication.BuildConfig
 import com.sm.myapplication.R
 import com.sm.myapplication.ui.theme.Black50
-import com.sm.myapplication.ui.theme.GreenDark
-import com.sm.myapplication.ui.theme.GreenLighter
+import com.sm.myapplication.ui.theme.BgGreenLight
+import com.sm.myapplication.ui.theme.Green700
+import com.sm.myapplication.ui.theme.Green900
 import com.sm.myapplication.ui.theme.GreenPrimary
 
 @Composable
@@ -125,8 +126,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    0f to GreenLighter.copy(alpha = 0.55f),
-                    0.30f to GreenLighter.copy(alpha = 0.22f),
+                    0f to BgGreenLight,
+                    0.30f to BgGreenLight.copy(alpha = 0.5f),
                     0.58f to Color.White,
                     1f to Color.White,
                 )
@@ -202,7 +203,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
 
             Text(
                 text = "STUDY EYE",
-                color = BrandInk,
+                color = Green900,
                 fontWeight = FontWeight.Bold,
                 fontSize = 26.sp,
                 letterSpacing = 0.3.sp,
@@ -409,7 +410,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         Image(
                             painter = painterResource(R.drawable.ic_login_google),
                             contentDescription = "구글 로그인",
-                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                            modifier = Modifier.fillMaxSize().padding(10.dp),
                         )
                     }
                 }
@@ -423,9 +424,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
 /** 카카오 로그인 버튼 배경색 (카카오 디자인 가이드) */
 private val KakaoYellow = Color(0xFFFEE500)
 
-/** 로그인 화면 브랜드 이름 색: 앱 아이콘 연두와 같은 계열의 진한 톤 (연두 배경에서도 읽히도록) */
-private val BrandInk = Color(0xFF3D6B27)
-
 // 로그인 화면의 기능 소개 한 줄: 아이콘 + 제목 + 설명
 @Composable
 private fun FeatureRow(icon: ImageVector, title: String, description: String) {
@@ -434,10 +432,10 @@ private fun FeatureRow(icon: ImageVector, title: String, description: String) {
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(GreenLighter.copy(alpha = 0.6f)),
+                .background(BgGreenLight),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = GreenDark, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = null, tint = Green700, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.width(14.dp))
         Column {
@@ -457,12 +455,11 @@ private fun SocialCircleButton(
 ) {
     Surface(
         modifier = Modifier
-            .size(50.dp)
+            .size(44.dp)
             .alpha(if (enabled) 1f else 0.5f),
         shape = CircleShape,
         color = Color.White,
         border = borderColor?.let { BorderStroke(1.dp, it) },
-        shadowElevation = 4.dp,
         enabled = enabled,
         onClick = onClick,
     ) {
