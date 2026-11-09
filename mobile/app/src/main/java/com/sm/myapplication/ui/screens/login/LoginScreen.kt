@@ -24,12 +24,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -198,18 +198,19 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                     color = Color.White,
                     shadowElevation = 10.dp,
                 ) {}
+                // 앱 런처 아이콘(T16a)과 같은 모습: 108 캔버스 중 런처가 보여주는 가운데 72 영역을 원에 맞춤.
+                // 전경의 연두 외곽선이 배경색(#8CBC69 = GreenPrimary)과 같아야 하므로 단색 배경을 쓴다.
                 Box(
                     modifier = Modifier
                         .size(88.dp)
                         .clip(CircleShape)
-                        .background(Brush.verticalGradient(colors = listOf(GreenPrimary, GreenDark))),
+                        .background(GreenPrimary),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Timer,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(44.dp),
+                    Image(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = "STUDY EYE 로고",
+                        modifier = Modifier.requiredSize(88.dp * 108f / 72f),
                     )
                 }
             }
@@ -217,7 +218,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "SmartStudyTimer",
+                text = "STUDY EYE",
                 color = GreenDark,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,

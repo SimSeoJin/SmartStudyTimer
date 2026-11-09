@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +69,8 @@ fun MainHomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // 홈에 돌아올 때마다 티어를 다시 받아 순공 직후 변동도 반영한다.
+    LaunchedEffect(Unit) { viewModel.refreshTier() }
     val daysLeft = viewModel.daysUntilDDay()
     val dateText = LocalDate.now().format(DateTimeFormatter.ofPattern("M월 d일 EEEE", Locale.KOREAN))
     val remaining = state.todoTotal - state.todoDone

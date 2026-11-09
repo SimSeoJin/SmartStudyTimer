@@ -11,7 +11,7 @@ import com.sm.myapplication.R
 
 object NotificationHelper {
     private const val CHANNEL_ID = "study_timer_channel"
-    private const val CHANNEL_NAME = "Study Timer Notifications"
+    private const val CHANNEL_NAME = "STUDY EYE 알림"
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
