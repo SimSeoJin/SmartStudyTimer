@@ -115,6 +115,9 @@ fun PureModeScreen(onBack: () -> Unit) {
     var sessionEnded by remember { mutableStateOf(false) }
     var pureModeSettings by remember { mutableStateOf(PureModeUserSettings.load(context)) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showEndConfirm by remember { mutableStateOf(false) }
+    // 저장을 마친 이번 세션 시간. null이 아니면 결과 화면을 보여준다.
+    var finishedSessionMs by remember { mutableStateOf<Long?>(null) }
     val statusUi = remember(state.isRunning, state.pauseCause, state.message, cameraStatus) {
         pureModeStatusUi(state.isRunning, state.pauseCause, state.message, cameraStatus)
     }
@@ -259,17 +262,23 @@ fun PureModeScreen(onBack: () -> Unit) {
         ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    val finish: () -> Unit = {
+    val endSession: () -> Unit = {
         if (!sessionEnded) {
             sessionEnded = true
+            val sessionMs = TimerController.state.value.elapsedMs
             // Unbind now, not after the navigation transition. A new visit must
             // not reuse a service still owned by this outgoing screen.
             cameraSession.close()
             TimerController.stop(AppRepository.get(context.applicationContext as Application))
-            onBack()
+            // 1초 미만은 저장되지 않으므로(TimerController) 결과 화면 없이 바로 나간다
+            if (sessionMs < 1_000L) onBack() else finishedSessionMs = sessionMs
         }
     }
-    BackHandler(onBack = finish)
+    // 종료 버튼·뒤로가기: 바로 끝내지 않고 한 번 확인한다 (옆 버튼을 누르려다 실수로 끝내는 일 방지)
+    val requestFinish: () -> Unit = {
+        if (finishedSessionMs != null) onBack() else showEndConfirm = true
+    }
+    BackHandler(onBack = requestFinish)
 
     Column(
         modifier = Modifier.fillMaxSize().background(FocusBg)
@@ -325,14 +334,15 @@ fun PureModeScreen(onBack: () -> Unit) {
                             },
                             modifier = Modifier.fillMaxSize(),
                         )
-                        // Keep the latest UI's alignment guide, without debug boxes or text.
-                        Box(
-                            modifier = Modifier.align(Alignment.Center).size(width = 150.dp, height = 195.dp)
-                                .border(
-                                    1.5.dp,
-                                    if (state.isRunning) FocusGreen.copy(alpha = 0.75f) else CardWhite.copy(alpha = 0.3f),
-                                    RoundedCornerShape(percent = 48),
-                                ),
+                        // 얼굴은 화면 어디에 있어도 인식되므로, 위치를 맞추게 하는 고정 타원 대신 안내 문구를 둔다
+                        Text(
+                            text = "얼굴이 화면에 보이기만 하면 돼요",
+                            color = CardWhite,
+                            fontSize = 13.sp,
+                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color.Black.copy(alpha = 0.45f))
+                                .padding(horizontal = 14.dp, vertical = 7.dp),
                         )
                     }
                     Spacer(Modifier.height(18.dp))
@@ -340,7 +350,7 @@ fun PureModeScreen(onBack: () -> Unit) {
                     Spacer(Modifier.weight(1f))
                 }
 
-                TimerLine(big = !cameraPreviewVisible)
+                TimerLine(big = !cameraPreviewVisible, running = state.isRunning)
                 Spacer(Modifier.height(8.dp))
                 StatusLine(statusUi)
                 if (!cameraPreviewVisible) Spacer(Modifier.weight(1f))
@@ -373,9 +383,24 @@ fun PureModeScreen(onBack: () -> Unit) {
                 contentDescription = "순공모드 종료",
                 selected = false,
                 modifier = Modifier.weight(1f),
-                onClick = finish,
+                onClick = requestFinish,
             )
         }
+    }
+
+    if (showEndConfirm) {
+        EndConfirmDialog(
+            elapsedMs = TimerController.state.value.elapsedMs,
+            onContinue = { showEndConfirm = false },
+            onEnd = {
+                showEndConfirm = false
+                endSession()
+            },
+        )
+    }
+
+    finishedSessionMs?.let { sessionMs ->
+        SessionResultDialog(sessionMs = sessionMs, onDone = onBack)
     }
 
     if (showSettingsDialog) {
@@ -583,7 +608,7 @@ private fun StatusLine(status: PureModeStatusUi) {
 }
 
 @Composable
-private fun TimerLine(big: Boolean = false) {
+private fun TimerLine(big: Boolean = false, running: Boolean = true) {
     val elapsedSeconds = remember { pureModeElapsedSeconds(TimerController.state) }
     val seconds by elapsedSeconds.collectAsStateWithLifecycle(
         initialValue = TimerController.state.value.elapsedMs / 1_000L,
@@ -592,7 +617,8 @@ private fun TimerLine(big: Boolean = false) {
         text = formatElapsedDigits(seconds * 1_000L),
         maxFontSize = if (big) 56f else 48f,
         minFontSize = 24f,
-        color = CardWhite,
+        // 멈춘 동안은 흐리게 해서 아래 상태 글자를 읽지 않아도 멈춘 걸 알 수 있게
+        color = if (running) CardWhite else CardWhite.copy(alpha = 0.4f),
     )
 }
 
@@ -647,6 +673,77 @@ private fun PureModeActionButton(
         Spacer(Modifier.height(4.dp))
         Text(label, color = CardWhite, fontWeight = FontWeight.Medium, fontSize = 13.sp)
     }
+}
+
+/** "3분 12초", "1시간 5분" */
+private fun formatSessionDuration(ms: Long): String {
+    val totalSec = (ms / 1000).coerceAtLeast(0)
+    val h = totalSec / 3600
+    val m = (totalSec / 60) % 60
+    val s = totalSec % 60
+    return when {
+        h > 0 -> if (m > 0) "${h}시간 ${m}분" else "${h}시간"
+        m > 0 -> if (s > 0) "${m}분 ${s}초" else "${m}분"
+        else -> "${s}초"
+    }
+}
+
+@Composable
+private fun EndConfirmDialog(elapsedMs: Long, onContinue: () -> Unit, onEnd: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onContinue,
+        containerColor = FocusSurface,
+        titleContentColor = CardWhite,
+        textContentColor = CardWhite.copy(alpha = 0.75f),
+        title = { Text("순공을 마칠까요?") },
+        text = {
+            Text(
+                if (elapsedMs < 1_000L) "아직 순공한 시간이 없어요. 지금 끝내면 기록 없이 나가요."
+                else "지금까지 ${formatSessionDuration(elapsedMs)} 순공했어요. 끝내면 기록이 저장돼요."
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onEnd) {
+                Text(if (elapsedMs < 1_000L) "끝내기" else "끝내고 저장", color = FocusGreen, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onContinue) { Text("계속하기", color = CardWhite) }
+        },
+    )
+}
+
+/** 순공을 끝낸 순간을 보상으로: 이번 세션 시간과 오늘 합계를 보여준다. */
+@Composable
+private fun SessionResultDialog(sessionMs: Long, onDone: () -> Unit) {
+    val context = LocalContext.current
+    val todayMs by remember {
+        AppRepository.get(context.applicationContext as Application)
+            .observeTodaySessionMs(java.time.LocalDate.now().toEpochDay())
+    }.collectAsStateWithLifecycle(initialValue = 0L)
+    AlertDialog(
+        onDismissRequest = onDone,
+        containerColor = FocusSurface,
+        titleContentColor = CardWhite,
+        textContentColor = CardWhite.copy(alpha = 0.75f),
+        title = { Text("수고했어요!") },
+        text = {
+            Column {
+                Text("이번 순공", fontSize = 13.sp)
+                Text(
+                    formatSessionDuration(sessionMs),
+                    color = FocusGreen,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text("오늘 공부 합계 ${formatSessionDuration(todayMs)}", fontSize = 14.sp)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDone) { Text("홈으로", color = FocusGreen, fontWeight = FontWeight.SemiBold) }
+        },
+    )
 }
 
 private fun formatElapsedDigits(ms: Long): String {
