@@ -41,6 +41,7 @@ import com.sm.myapplication.ui.components.InsetCard
 import com.sm.myapplication.ui.components.RoundCheck
 import com.sm.myapplication.ui.components.RowDivider
 import com.sm.myapplication.ui.components.SummaryHeader
+import com.sm.myapplication.ui.components.TierBadge
 import com.sm.myapplication.ui.components.formatHms
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.theme.AccentInk
@@ -128,6 +129,7 @@ fun MainHomeScreen(
                 actionText = "기준표 보기 ›",
                 onAction = onOpenTier,
                 modifier = Modifier.weight(1f),
+                leading = state.tierServerName?.let { tier -> { TierBadge(tier, size = 26.dp) } },
             )
         }
 
@@ -219,6 +221,8 @@ private fun StatCard(
     actionText: String,
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 값 왼쪽에 붙는 아이콘(예: 티어 배지) */
+    leading: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -229,12 +233,18 @@ private fun StatCard(
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = LabelSecondary)
         Spacer(Modifier.height(4.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineSmall,
-            color = valueColor,
-            maxLines = 1,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (leading != null) {
+                leading()
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                color = valueColor,
+                maxLines = 1,
+            )
+        }
         Spacer(Modifier.height(3.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (caption != null) {

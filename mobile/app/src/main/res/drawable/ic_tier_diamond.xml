@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 티어 배지: 다이아 (보석 + 반짝임) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- 테두리 -->
+    <path
+        android:fillColor="#1F6FA8"
+        android:pathData="M10,22 L20,8 H44 L54,22 L32,60 Z" />
+    <!-- 윗면 -->
+    <path
+        android:fillColor="#B9EAFC"
+        android:pathData="M22.5,11 L27,22 H37 L41.5,11 Z" />
+    <path
+        android:fillColor="#7FD3F7"
+        android:pathData="M14,22 L22,11 L27,22 Z" />
+    <path
+        android:fillColor="#7FD3F7"
+        android:pathData="M50,22 L42,11 L37,22 Z" />
+    <!-- 아랫면 -->
+    <path
+        android:fillColor="#4DB6EC"
+        android:pathData="M14,22 H27 L32,55 Z" />
+    <path
+        android:fillColor="#8EDBFA"
+        android:pathData="M27,22 H37 L32,55 Z" />
+    <path
+        android:fillColor="#2E95D3"
+        android:pathData="M37,22 H50 L32,55 Z" />
+    <!-- 반짝임 -->
+    <path
+        android:fillColor="#4DB6EC"
+        android:pathData="M56,2 Q57,7 62,8 Q57,9 56,14 Q55,9 50,8 Q55,7 56,2 Z" />
+    <path
+        android:fillColor="#4DB6EC"
+        android:pathData="M8,42 Q8.7,45.3 12,46 Q8.7,46.7 8,50 Q7.3,46.7 4,46 Q7.3,45.3 8,42 Z" />
+    <!-- 눈 -->
+    <path
+        android:fillColor="#1A1A1D"
+        android:pathData="M21,30 Q32,21 43,30 Q32,39 21,30 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M27.6,30 a4.4,4.4 0 1,0 8.8,0 a4.4,4.4 0 1,0 -8.8,0 Z" />
+    <path
+        android:fillColor="#1A1A1D"
+        android:pathData="M30,30 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0 Z" />
+</vector>
