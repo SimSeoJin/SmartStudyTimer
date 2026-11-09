@@ -275,7 +275,7 @@ private fun ProfileHeader(name: String) {
                         .background(Brush.linearGradient(listOf(Color(0xFFD8EFE0), Green300))),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val initial = name.trim().takeIf { it.isNotEmpty() }?.take(1)
+                    val initial = name.trim().takeIf { it.isNotEmpty() }?.take(1)?.uppercase()
                     if (initial != null) {
                         Text(
                             text = initial,

@@ -47,6 +47,9 @@ import androidx.compose.ui.unit.sp
 import com.sm.myapplication.ui.theme.AccentGreen
 import com.sm.myapplication.ui.theme.AccentInk
 import com.sm.myapplication.ui.theme.AccentTint
+import com.sm.myapplication.ui.theme.BgGreenLight
+import com.sm.myapplication.ui.theme.Green300
+import com.sm.myapplication.ui.theme.Green700
 import com.sm.myapplication.ui.theme.CardWhite
 import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.LabelPrimary
@@ -160,7 +163,7 @@ fun DialogHeader(title: String, onClose: () -> Unit) {
     }
 }
 
-/** 큰 제목 (할 일·설정 등 제목이 필요한 화면). */
+/** 화면 제목 (할 일 등). 탭 화면의 SummaryHeader와 같은 크기를 써서 화면을 오갈 때 제목 크기가 튀지 않게 한다. */
 @Composable
 fun LargeTitle(title: String, caption: String? = null, modifier: Modifier = Modifier) {
     Column(modifier = modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 12.dp)) {
@@ -168,7 +171,7 @@ fun LargeTitle(title: String, caption: String? = null, modifier: Modifier = Modi
             Text(caption, style = MaterialTheme.typography.bodySmall, color = LabelSecondary)
             Spacer(Modifier.height(2.dp))
         }
-        Text(title, style = MaterialTheme.typography.headlineLarge, color = LabelPrimary)
+        Text(title, style = MaterialTheme.typography.headlineSmall, color = LabelPrimary)
     }
 }
 
@@ -190,14 +193,14 @@ fun SummaryHeader(
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = summary,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = LabelPrimary,
                 )
                 if (highlight != null) {
                     Spacer(Modifier.width(5.dp))
                     Text(
                         text = highlight,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.headlineSmall,
                         color = AccentInk,
                     )
                 }
@@ -216,18 +219,19 @@ fun SummaryHeader(
 
 @Composable
 fun InitialAvatar(name: String, size: androidx.compose.ui.unit.Dp = 36.dp, modifier: Modifier = Modifier) {
-    val initial = name.trim().takeIf { it.isNotEmpty() }?.take(1)
+    val initial = name.trim().takeIf { it.isNotEmpty() }?.take(1)?.uppercase()
     Box(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(AccentGreen, AccentInk))),
+            .background(BgGreenLight)
+            .border(1.5.dp, Green300, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         if (initial != null) {
             Text(
                 text = initial,
-                color = CardWhite,
+                color = Green700,
                 fontWeight = FontWeight.Bold,
                 fontSize = (size.value * 0.42f).sp,
             )
@@ -235,7 +239,7 @@ fun InitialAvatar(name: String, size: androidx.compose.ui.unit.Dp = 36.dp, modif
             Icon(
                 Icons.Rounded.Person,
                 contentDescription = "프로필",
-                tint = CardWhite,
+                tint = Green700,
                 modifier = Modifier.size(size * 0.55f),
             )
         }
