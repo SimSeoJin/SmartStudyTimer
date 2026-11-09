@@ -356,7 +356,15 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                             }
 
                             if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
-                                UserApiClient.instance.loginWithKakaoTalk(context, callback = callback)
+                                // 카카오톡에 카카오계정이 연결되지 않은 경우 등 실패 시 카카오계정 로그인으로 재시도
+                                // (사용자가 직접 취소한 경우는 제외)
+                                UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
+                                    if (error != null && !(error is ClientError && error.reason == ClientErrorCause.Cancelled)) {
+                                        UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+                                    } else {
+                                        callback(token, error)
+                                    }
+                                }
                             } else {
                                 UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
                             }
