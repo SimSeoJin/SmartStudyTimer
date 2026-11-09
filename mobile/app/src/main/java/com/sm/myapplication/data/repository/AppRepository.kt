@@ -199,12 +199,12 @@ class AppRepository(
                 dateEpochDay = dateEpochDay,
             )
         )
-        // 서버 기록은 랭킹·티어 산정용이라 순공 모드만 보낸다. 일반 타이머 기록은 로컬(Room)에만 남는다.
-        if (mode == StudyMode.PURE) syncStudySessionToServer(start, end)
+        // 모든 기록을 모드와 함께 서버에 보낸다. 랭킹·티어는 서버가 순공(PURE) 시간만으로 계산한다.
+        syncStudySessionToServer(start, end, mode)
     }
 
     // 로그인 안 한 상태거나 네트워크가 안 되면 조용히 실패 — 로컬 기록(Room)은 이미 저장됐으므로 사용자 경험엔 영향 없음.
-    private suspend fun syncStudySessionToServer(start: Long, end: Long) {
+    private suspend fun syncStudySessionToServer(start: Long, end: Long, mode: StudyMode) {
         val memberId = prefs.memberId.first() ?: return
         val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         runCatching {
@@ -213,6 +213,7 @@ class AppRepository(
                     memberId = memberId,
                     startTime = isoFormat.format(Date(start)),
                     endTime = isoFormat.format(Date(end)),
+                    mode = mode.name,
                 )
             )
         }.onSuccess { response ->

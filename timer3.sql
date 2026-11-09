@@ -26,6 +26,7 @@ CREATE TABLE `daily_summary` (
   `member_id` bigint NOT NULL,
   `date` date NOT NULL,
   `daily_total` int NOT NULL COMMENT '초 단위',
+  `pure_total` int NOT NULL DEFAULT 0 COMMENT '순공 모드 시간, 초 단위 (랭킹 기준)',
   `streak` int NOT NULL,
   PRIMARY KEY (`member_id`,`date`),
   CONSTRAINT `fk_dsummary_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE
@@ -38,7 +39,7 @@ CREATE TABLE `daily_summary` (
 
 LOCK TABLES `daily_summary` WRITE;
 /*!40000 ALTER TABLE `daily_summary` DISABLE KEYS */;
-INSERT INTO `daily_summary` VALUES (101,'2026-01-01',5400,1),(101,'2026-01-13',1200,1);
+INSERT INTO `daily_summary` (`member_id`,`date`,`daily_total`,`streak`) VALUES (101,'2026-01-01',5400,1),(101,'2026-01-13',1200,1);
 /*!40000 ALTER TABLE `daily_summary` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -226,7 +227,7 @@ CREATE TABLE `dday` (
 /*!50001 SET collation_connection      = utf8mb3_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `ranking` AS select `resulttable`.`member_id` AS `member_id`,`resulttable`.`nickname` AS `nickname`,`resulttable`.`total_time` AS `total_time`,`resulttable`.`recent_avgtime` AS `recent_avgtime`,`resulttable`.`rank_position` AS `rank_position`,(select `tier_meta`.`tier_name` from `tier_meta` where (`resulttable`.`top_percent_val` <= `tier_meta`.`top_percent`) order by `tier_meta`.`top_percent`,`tier_meta`.`tier_order` limit 1) AS `tier_name` from (select `aggregateddata`.`member_id` AS `member_id`,`aggregateddata`.`nickname` AS `nickname`,`aggregateddata`.`total_time` AS `total_time`,`aggregateddata`.`recent_avgtime` AS `recent_avgtime`,rank() OVER (ORDER BY `aggregateddata`.`total_time` desc )  AS `rank_position`,((rank() OVER (ORDER BY `aggregateddata`.`total_time` desc )  / count(0) OVER () ) * 100) AS `top_percent_val` from (select `member`.`member_id` AS `member_id`,`member`.`nickname` AS `nickname`,sum(ifnull(`daily_summary`.`daily_total`,0)) AS `total_time`,round((sum(ifnull(`daily_summary`.`daily_total`,0)) / 7),1) AS `recent_avgtime` from (`member` left join `daily_summary` on(((`member`.`member_id` = `daily_summary`.`member_id`) and (`daily_summary`.`date` > (curdate() - interval 7 day))))) group by `member`.`member_id`,`member`.`nickname` having (`total_time` > 0)) `aggregateddata`) `resulttable` */;
+/*!50001 VIEW `ranking` AS select `resulttable`.`member_id` AS `member_id`,`resulttable`.`nickname` AS `nickname`,`resulttable`.`total_time` AS `total_time`,`resulttable`.`recent_avgtime` AS `recent_avgtime`,`resulttable`.`rank_position` AS `rank_position`,(select `tier_meta`.`tier_name` from `tier_meta` where (`resulttable`.`top_percent_val` <= `tier_meta`.`top_percent`) order by `tier_meta`.`top_percent`,`tier_meta`.`tier_order` limit 1) AS `tier_name` from (select `aggregateddata`.`member_id` AS `member_id`,`aggregateddata`.`nickname` AS `nickname`,`aggregateddata`.`total_time` AS `total_time`,`aggregateddata`.`recent_avgtime` AS `recent_avgtime`,rank() OVER (ORDER BY `aggregateddata`.`total_time` desc )  AS `rank_position`,((rank() OVER (ORDER BY `aggregateddata`.`total_time` desc )  / count(0) OVER () ) * 100) AS `top_percent_val` from (select `member`.`member_id` AS `member_id`,`member`.`nickname` AS `nickname`,sum(ifnull(`daily_summary`.`pure_total`,0)) AS `total_time`,round((sum(ifnull(`daily_summary`.`pure_total`,0)) / 7),1) AS `recent_avgtime` from (`member` left join `daily_summary` on(((`member`.`member_id` = `daily_summary`.`member_id`) and (`daily_summary`.`date` > (curdate() - interval 7 day))))) group by `member`.`member_id`,`member`.`nickname` having (`total_time` > 0)) `aggregateddata`) `resulttable` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -1436,6 +1437,8 @@ INSERT INTO `daily_summary` (`member_id`,`date`,`daily_total`,`streak`) VALUES
 (100,CURDATE() - INTERVAL 2 DAY,4260,5),
 (100,CURDATE() - INTERVAL 1 DAY,3180,6),
 (100,CURDATE() - INTERVAL 0 DAY,2040,7);
+-- 더미 기록은 모두 순공 모드로 본다 (랭킹은 pure_total 기준)
+UPDATE `daily_summary` SET `pure_total` = `daily_total` WHERE `member_id` BETWEEN 1 AND 100;
 INSERT INTO `study_summary` (`member_id`,`current_streak`,`max_streak`,`total_study_time`,`total_study_days`,`last_study_date`,`updated_at`) VALUES
 (1,0,5,34800,6,CURDATE() - INTERVAL 7 DAY,NOW()),
 (2,1,3,42600,9,CURDATE() - INTERVAL 0 DAY,NOW()),

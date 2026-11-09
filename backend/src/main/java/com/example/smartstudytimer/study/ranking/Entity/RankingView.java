@@ -33,11 +33,11 @@ public class RankingView {
     @Column(name = "nickname")
     private String nickname;
 
-    /** 최근 7일 공부시간 합계(분) */
+    /** 최근 7일 순공 시간 합계(초) */
     @Column(name = "total_time")
     private Long totalTime;
 
-    /** 최근 7일 일평균(분, 소수 1자리) */
+    /** 최근 7일 순공 일평균(초, 소수 1자리) */
     @Column(name = "recent_avgtime")
     private Double recentAvgTime;
 

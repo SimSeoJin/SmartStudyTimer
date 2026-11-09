@@ -3,6 +3,7 @@ package com.example.smartstudytimer.study.record.service;
 import com.example.smartstudytimer.member.Entity.Member;
 import com.example.smartstudytimer.member.repository.MemberRepository;
 import com.example.smartstudytimer.study.record.controller.dto.StudyRecordRequest;
+import com.example.smartstudytimer.study.record.Entity.StudyMode;
 import com.example.smartstudytimer.study.record.Entity.StudyRecord;
 import com.example.smartstudytimer.study.record.repository.StudyRepository;
 import com.example.smartstudytimer.study.daily.Entity.DailySummary;
@@ -38,6 +39,8 @@ public class StudyServiceImpl implements StudyService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startTime/endTime이 올바르지 않습니다.");
         }
         int studySeconds = (int) Duration.between(request.getStartTime(), request.getEndTime()).getSeconds();
+        StudyMode mode = request.getMode() != null ? request.getMode() : StudyMode.BASIC;
+        int pureSeconds = mode == StudyMode.PURE ? studySeconds : 0;
 
         Member member = memberRepository.findById(request.getMemberId())
                 .orElseThrow(() -> new RuntimeException("Member not found"));
@@ -47,6 +50,7 @@ public class StudyServiceImpl implements StudyService {
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .studySeconds(studySeconds)
+                .mode(mode)
                 .build();
         studyRepository.save(record);
 
@@ -65,10 +69,12 @@ public class StudyServiceImpl implements StudyService {
                     .member(member)
                     .date(targetDate)
                     .dailyTotal(studySeconds)
+                    .pureTotal(pureSeconds)
                     .streak(currentDailyStreak)
                     .build();
         } else {
             daily.setDailyTotal(daily.getDailyTotal() + studySeconds);
+            daily.setPureTotal(daily.getPureTotal() + pureSeconds);
             currentDailyStreak = daily.getStreak();
         }
         dailySummaryRepository.save(daily);
