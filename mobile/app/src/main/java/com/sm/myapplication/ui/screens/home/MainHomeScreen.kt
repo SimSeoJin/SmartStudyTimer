@@ -248,7 +248,7 @@ private fun WeeklyCard(weekly: WeeklyUiState) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text("최근 7일", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
+                Text("최근 7일 공부", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
                 Text(
                     formatStudyDuration(weekTotalMs),
                     style = MaterialTheme.typography.bodySmall,
