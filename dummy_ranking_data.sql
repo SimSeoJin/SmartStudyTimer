@@ -1204,6 +1204,8 @@ INSERT INTO `daily_summary` (`member_id`,`date`,`daily_total`,`streak`) VALUES
 (100,CURDATE() - INTERVAL 2 DAY,4260,5),
 (100,CURDATE() - INTERVAL 1 DAY,3180,6),
 (100,CURDATE() - INTERVAL 0 DAY,2040,7);
+-- 더미 기록은 모두 순공 모드로 본다 (랭킹은 pure_total 기준)
+UPDATE `daily_summary` SET `pure_total` = `daily_total` WHERE `member_id` BETWEEN 1 AND 100;
 INSERT INTO `study_summary` (`member_id`,`current_streak`,`max_streak`,`total_study_time`,`total_study_days`,`last_study_date`,`updated_at`) VALUES
 (1,0,5,34800,6,CURDATE() - INTERVAL 7 DAY,NOW()),
 (2,1,3,42600,9,CURDATE() - INTERVAL 0 DAY,NOW()),

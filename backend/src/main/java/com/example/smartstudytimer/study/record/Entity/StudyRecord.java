@@ -31,4 +31,9 @@ public class StudyRecord {
 
     @Column(name = "study_seconds")
     private Integer studySeconds;
+
+    // 기존 행은 BASIC으로 채워진다(ddl-auto=update로 컬럼이 추가될 때 기본값 사용).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mode", columnDefinition = "varchar(10) not null default 'BASIC'")
+    private StudyMode mode;
 }
