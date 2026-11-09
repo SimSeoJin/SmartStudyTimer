@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -65,6 +66,7 @@ import com.sm.myapplication.ui.theme.Green900
 import com.sm.myapplication.ui.theme.GroupedBg
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
+import com.sm.myapplication.ui.theme.LabelTertiary
 
 private data class RankRow(val rank: Long, val name: String, val time: String, val tier: String?, val isMe: Boolean = false)
 private data class TopRanker(val rank: Long, val name: String, val time: String, val tier: String?, val barHeight: Int)
@@ -171,10 +173,40 @@ fun RankScreen(onOpenTier: () -> Unit) {
                 val top3 = all.take(3).mapIndexed { i, r ->
                     TopRanker(r.rankPosition, r.nickname, formatHm(r.totalTime), r.tierName, barHeights[i])
                 }
-                val podiumOrder = listOfNotNull(top3.getOrNull(1), top3.getOrNull(0), top3.getOrNull(2))
-                Podium(podiumOrder)
+                // 2·3위가 없어도 자리를 비워 둬서 시상대 모양을 유지한다
+                Podium(second = top3.getOrNull(1), first = top3[0], third = top3.getOrNull(2))
 
                 Spacer(Modifier.height(16.dp))
+
+                // 사람이 적어 목록이 비면, 빈 공간에 랭킹 규칙을 안내해 순공모드를 유도한다
+                if (listRows.isEmpty() && !meOutsideList) {
+                    InsetCard {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Visibility,
+                                contentDescription = null,
+                                tint = Green700,
+                                modifier = Modifier.size(22.dp),
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "순공모드로 공부하면 순위에 올라가요",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = LabelPrimary,
+                                )
+                                Text(
+                                    "최근 7일 순공 시간으로 순위와 티어가 정해져요. 일반 타이머 기록은 반영되지 않아요.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = LabelSecondary,
+                                )
+                            }
+                        }
+                    }
+                }
 
                 val trackMyRow = Modifier.onGloballyPositioned { myRowBottom = it.positionInWindow().y + it.size.height }
                 if (listRows.isNotEmpty() || meOutsideList) {
@@ -227,8 +259,9 @@ private fun EllipsisRow() {
     )
 }
 
+/** 2위-1위-3위 순서로 배치. 비어 있는 순위는 빈 단상으로 보여준다. */
 @Composable
-private fun Podium(top3: List<TopRanker>) {
+private fun Podium(second: TopRanker?, first: TopRanker, third: TopRanker?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -236,9 +269,31 @@ private fun Podium(top3: List<TopRanker>) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
-        top3.forEach { ranker ->
-            PodiumColumn(ranker, modifier = Modifier.weight(1f))
+        listOf(2L to second, 1L to first, 3L to third).forEach { (rank, ranker) ->
+            if (ranker != null) {
+                PodiumColumn(ranker, modifier = Modifier.weight(1f))
+            } else {
+                EmptyPodiumColumn(rank, barHeight = if (rank == 2L) 62 else 50, modifier = Modifier.weight(1f))
+            }
         }
+    }
+}
+
+@Composable
+private fun EmptyPodiumColumn(rank: Long, barHeight: Int, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .height(barHeight.dp)
+            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+            .background(AccentTint),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Text(
+            text = "$rank",
+            style = MaterialTheme.typography.titleMedium,
+            color = LabelTertiary,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }
 

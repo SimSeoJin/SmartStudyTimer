@@ -57,6 +57,7 @@ import com.sm.myapplication.ui.theme.CardWhite
 import com.sm.myapplication.ui.theme.Destructive
 import com.sm.myapplication.ui.theme.Green500
 import com.sm.myapplication.ui.theme.Green700
+import com.sm.myapplication.ui.theme.Green900
 import com.sm.myapplication.ui.theme.GroupedBg
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
@@ -374,7 +375,7 @@ private fun DayCell(
                     }
                 )
                 // 선택한 날은 채움 대신 테두리로 표시해 공부량 색을 가리지 않는다
-                .then(if (isSelected) Modifier.border(2.dp, AccentInk, RoundedCornerShape(9.dp)) else Modifier),
+                .then(if (isSelected) Modifier.border(1.5.dp, Green900, RoundedCornerShape(9.dp)) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             Text(
