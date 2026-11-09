@@ -83,7 +83,8 @@ private fun formatHms(seconds: Long): String =
     "%02d:%02d:%02d".format(seconds / 3600, seconds % 3600 / 60, seconds % 60)
 
 /** 초 → "12h 40m" */
-private fun formatHm(seconds: Long): String = "${seconds / 3600}h %02dm".format(seconds % 3600 / 60)
+private fun formatHm(seconds: Long): String =
+    if (seconds in 1 until 60) "<1m" else "${seconds / 3600}h %02dm".format(seconds % 3600 / 60)
 
 @Composable
 fun RankScreen(onOpenTier: () -> Unit) {
@@ -102,7 +103,7 @@ fun RankScreen(onOpenTier: () -> Unit) {
     val sub = when {
         load is RankLoad.Loading -> "랭킹을 불러오는 중…"
         load is RankLoad.Failed -> "랭킹을 불러오지 못했어요"
-        me != null -> "이번 주 나의 순위 ${me.rankPosition}위 · 티어 ${tierDisplayName(me.tierName)}"
+        me != null -> "최근 7일 나의 순위 ${me.rankPosition}위 · 티어 ${tierDisplayName(me.tierName)}"
         else -> "최근 7일 순공 기록이 없어 아직 순위가 없어요"
     }
 
@@ -155,7 +156,7 @@ fun RankScreen(onOpenTier: () -> Unit) {
 
             if (snapshot != null && all.isEmpty()) {
                 Text(
-                    "아직 이번 주 순공 기록이 있는 사람이 없어요.",
+                    "최근 7일 동안 순공 기록이 있는 사람이 아직 없어요.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = LabelSecondary,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp),

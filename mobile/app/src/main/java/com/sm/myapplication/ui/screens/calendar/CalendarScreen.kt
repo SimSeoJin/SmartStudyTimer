@@ -1,6 +1,7 @@
 package com.sm.myapplication.ui.screens.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,15 +47,16 @@ import com.sm.myapplication.ui.components.RowDivider
 import com.sm.myapplication.ui.components.SectionHeader
 import com.sm.myapplication.ui.components.SummaryHeader
 import com.sm.myapplication.ui.components.formatDuration
+import com.sm.myapplication.ui.components.formatStudyDuration
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.screens.home.formatClock
 import com.sm.myapplication.ui.theme.AccentInk
-import com.sm.myapplication.ui.theme.AccentGreen
 import com.sm.myapplication.ui.theme.AccentTint
+import com.sm.myapplication.ui.theme.BgGreenLight
 import com.sm.myapplication.ui.theme.CardWhite
 import com.sm.myapplication.ui.theme.Destructive
-import com.sm.myapplication.ui.theme.FillGray
-import com.sm.myapplication.ui.theme.Green300
+import com.sm.myapplication.ui.theme.Green500
+import com.sm.myapplication.ui.theme.Green700
 import com.sm.myapplication.ui.theme.GroupedBg
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
@@ -82,9 +84,9 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     ) {
         SummaryHeader(
             summary = "이번 달 누적",
-            highlight = if (monthTotalMs > 0) formatKoreanDuration(monthTotalMs) else "0분",
+            highlight = formatStudyDuration(monthTotalMs),
             sub = if (studiedDays > 0) {
-                "공부한 날 ${studiedDays}일 · 하루 평균 ${formatKoreanDuration(averageMs)}"
+                "공부한 날 ${studiedDays}일 · 하루 평균 ${formatStudyDuration(averageMs)}"
             } else {
                 "이번 달 기록이 아직 없어요"
             },
@@ -173,19 +175,19 @@ private fun SessionRow(session: StudySessionEntity) {
             modifier = Modifier
                 .size(30.dp)
                 .clip(RoundedCornerShape(9.dp))
-                .background(if (isPure) FillGray else AccentTint),
+                .background(if (isPure) BgGreenLight else AccentTint),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = if (isPure) Icons.Rounded.DarkMode else Icons.Rounded.PlayArrow,
+                imageVector = if (isPure) Icons.Rounded.Visibility else Icons.Rounded.PlayArrow,
                 contentDescription = null,
-                tint = if (isPure) LabelPrimary else AccentInk,
+                tint = if (isPure) Green700 else AccentInk,
                 modifier = Modifier.size(16.dp),
             )
         }
         Spacer(Modifier.width(10.dp))
         Text(
-            text = if (isPure) "순공 모드" else "기본 모드",
+            text = if (isPure) "순공 모드" else "일반 타이머",
             style = MaterialTheme.typography.titleSmall,
             color = LabelPrimary,
             maxLines = 1,
@@ -282,7 +284,7 @@ private fun MonthCard(
         }
         Spacer(Modifier.height(6.dp))
 
-        // 공부량 점의 진하기를 나누는 기준: 그 달 최대 기록의 절반
+        // 칸 색 진하기 기준: 그 달 최대 기록 대비 비율
         val maxMs = totalsByDay.values.maxOrNull() ?: 0L
         val firstDay = yearMonth.atDay(1)
         val startOffset = firstDay.dayOfWeek.value % 7 // 일요일 시작
@@ -299,8 +301,7 @@ private fun MonthCard(
                         val ms = totalsByDay[date.toEpochDay()] ?: 0L
                         DayCell(
                             day = dayNum,
-                            studyMs = ms,
-                            strong = maxMs > 0 && ms >= maxMs / 2,
+                            level = studyLevel(ms, maxMs),
                             isToday = date == today,
                             isDDay = date.toEpochDay() == ddayEpochDay,
                             isSelected = date == selected,
@@ -331,11 +332,22 @@ private fun ArrowButton(icon: ImageVector, description: String, onClick: () -> U
     }
 }
 
+/** 공부량 단계: 0(기록 없음) ~ 3(그 달 최대의 2/3 이상) */
+private fun studyLevel(ms: Long, maxMs: Long): Int = when {
+    ms <= 0L || maxMs <= 0L -> 0
+    ms * 3 >= maxMs * 2 -> 3
+    ms * 3 >= maxMs -> 2
+    else -> 1
+}
+
+// 잔디처럼 공부를 많이 한 날일수록 진한 초록
+private val HeatLevel1 = Color(0xFFE2F2D5)
+private val HeatLevel2 = Color(0xFFB3DC93)
+
 @Composable
 private fun DayCell(
     day: Int,
-    studyMs: Long,
-    strong: Boolean,
+    level: Int,
     isToday: Boolean,
     isDDay: Boolean,
     isSelected: Boolean,
@@ -348,44 +360,33 @@ private fun DayCell(
             .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(
-                        when {
-                            isSelected -> AccentGreen
-                            isDDay -> Destructive
-                            else -> Color.Transparent
-                        }
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = day.toString(),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = if (isSelected || isToday || isDDay) FontWeight.Bold else FontWeight.Normal,
-                    ),
-                    color = when {
-                        isSelected || isDDay -> CardWhite
-                        isToday -> AccentInk
-                        else -> LabelPrimary
-                    },
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(
+                    when {
+                        isDDay -> Destructive
+                        level == 3 -> Green500
+                        level == 2 -> HeatLevel2
+                        level == 1 -> HeatLevel1
+                        else -> Color.Transparent
+                    }
                 )
-            }
-            Spacer(Modifier.height(2.dp))
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(
-                        when {
-                            studyMs <= 0L -> Color.Transparent
-                            strong -> AccentGreen
-                            else -> Green300
-                        }
-                    )
+                // 선택한 날은 채움 대신 테두리로 표시해 공부량 색을 가리지 않는다
+                .then(if (isSelected) Modifier.border(2.dp, AccentInk, RoundedCornerShape(9.dp)) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = day.toString(),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = if (isSelected || isToday || isDDay) FontWeight.Bold else FontWeight.Normal,
+                ),
+                color = when {
+                    isDDay || level == 3 -> CardWhite
+                    isToday -> Green700
+                    else -> LabelPrimary
+                },
             )
         }
     }
@@ -397,13 +398,3 @@ private fun formatTime(epochMs: Long): String =
         .toLocalTime()
         .format(DateTimeFormatter.ofPattern("HH:mm"))
 
-private fun formatKoreanDuration(ms: Long): String {
-    val totalMin = ms / 60000
-    val h = totalMin / 60
-    val m = totalMin % 60
-    return when {
-        h > 0 && m > 0 -> "${h}시간 ${m}분"
-        h > 0 -> "${h}시간"
-        else -> "${m}분"
-    }
-}

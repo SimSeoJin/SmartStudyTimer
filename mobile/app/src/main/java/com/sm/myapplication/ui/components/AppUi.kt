@@ -456,6 +456,20 @@ fun formatHms(ms: Long): String {
     return "%02d:%02d:%02d".format(totalSec / 3600, (totalSec / 60) % 60, totalSec % 60)
 }
 
+/** 요약용 공부 시간: "2시간 5분", "40분". 1분이 안 되는 기록도 0분이 아니라 "1분 미만"으로 보여준다. */
+fun formatStudyDuration(ms: Long): String {
+    if (ms <= 0L) return "0분"
+    val totalMin = ms / 60000
+    if (totalMin == 0L) return "1분 미만"
+    val h = totalMin / 60
+    val m = totalMin % 60
+    return when {
+        h > 0 && m > 0 -> "${h}시간 ${m}분"
+        h > 0 -> "${h}시간"
+        else -> "${m}분"
+    }
+}
+
 fun formatDuration(ms: Long): String {
     val totalSec = (ms / 1000).coerceAtLeast(0)
     val h = totalSec / 3600
