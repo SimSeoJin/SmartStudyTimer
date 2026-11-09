@@ -19,7 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,10 +45,12 @@ import com.sm.myapplication.ui.components.RowDivider
 import com.sm.myapplication.ui.components.SummaryHeader
 import com.sm.myapplication.ui.components.TierBadge
 import com.sm.myapplication.ui.components.formatHms
+import com.sm.myapplication.ui.components.formatStudyDuration
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.theme.AccentInk
 import com.sm.myapplication.ui.theme.AccentTint
 import com.sm.myapplication.ui.theme.CardWhite
+import com.sm.myapplication.ui.theme.Green300
 import com.sm.myapplication.ui.theme.Green500
 import com.sm.myapplication.ui.theme.Green700
 import com.sm.myapplication.ui.theme.Green900
@@ -70,6 +74,7 @@ fun MainHomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val weekly by viewModel.weekly.collectAsStateWithLifecycle()
     // 홈에 돌아올 때마다 티어를 다시 받아 순공 직후 변동도 반영한다.
     LaunchedEffect(Unit) { viewModel.refreshTier() }
     val daysLeft = viewModel.daysUntilDDay()
@@ -85,7 +90,7 @@ fun MainHomeScreen(
         SummaryHeader(
             summary = dateText,
             sub = when {
-                state.todoTotal == 0 -> "오늘의 할 일을 추가해 보세요"
+                state.todoTotal == 0 -> "오늘도 순공 시작해 볼까요?"
                 remaining == 0 -> "오늘 할 일을 모두 끝냈어요 🎉"
                 else -> "할 일 ${remaining}개가 남았어요"
             },
@@ -143,6 +148,10 @@ fun MainHomeScreen(
             onTodoToggle = viewModel::toggleTodo,
         )
 
+        Spacer(Modifier.height(10.dp))
+
+        WeeklyCard(weekly)
+
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -177,13 +186,33 @@ private fun TimerHeroCard(
             color = CardWhite,
         )
         Spacer(Modifier.height(16.dp))
+        // 순공모드가 랭킹·티어에 반영되는 앱의 핵심 기능이라 주 버튼으로, 일반 타이머는 보조 버튼으로 둔다.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
+                    .weight(1.4f)
+                    .height(44.dp)
                     .clip(CircleShape)
                     .background(CardWhite)
+                    .pressable(onClick = onStartPure),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Rounded.Visibility,
+                    contentDescription = null,
+                    tint = Green700,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text("순공모드 시작", color = AccentInk, style = MaterialTheme.typography.titleSmall)
+            }
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(44.dp)
+                    .clip(CircleShape)
+                    .background(CardWhite.copy(alpha = 0.2f))
                     .pressable(onClick = onStartBasic),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
@@ -191,26 +220,108 @@ private fun TimerHeroCard(
                 Icon(
                     Icons.Rounded.PlayArrow,
                     contentDescription = null,
-                    tint = AccentInk,
+                    tint = CardWhite,
                     modifier = Modifier.size(18.dp),
                 )
-                Spacer(Modifier.width(4.dp))
-                Text("시작하기", color = AccentInk, style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.width(2.dp))
+                Text("일반 타이머", color = CardWhite, style = MaterialTheme.typography.titleSmall)
             }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .clip(CircleShape)
-                    .background(CardWhite.copy(alpha = 0.2f))
-                    .pressable(onClick = onStartPure),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("순공모드", color = CardWhite, style = MaterialTheme.typography.titleSmall)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "순공모드 시간만 랭킹·티어에 반영돼요",
+            style = MaterialTheme.typography.labelSmall,
+            color = CardWhite.copy(alpha = 0.8f),
+        )
+    }
+}
+
+@Composable
+private fun WeeklyCard(weekly: WeeklyUiState) {
+    val maxMs = weekly.days.maxOfOrNull { it.totalMs }?.takeIf { it > 0 } ?: 1L
+    val weekTotalMs = weekly.days.sumOf { it.totalMs }
+    InsetCard {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("최근 7일 공부", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
+                Text(
+                    formatStudyDuration(weekTotalMs),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LabelSecondary,
+                )
+            }
+            if (weekly.streakDays > 0) {
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(AccentTint)
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.LocalFireDepartment,
+                        contentDescription = null,
+                        tint = StreakOrange,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        "${weekly.streakDays}일 연속",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = AccentInk,
+                    )
+                }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            weekly.days.forEachIndexed { index, day ->
+                val isToday = index == weekly.days.lastIndex
+                val ratio = day.totalMs.toFloat() / maxMs
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(if (day.totalMs > 0) (WEEKLY_BAR_MAX * ratio).coerceAtLeast(6.dp) else 4.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                when {
+                                    day.totalMs == 0L -> AccentTint
+                                    isToday -> Green500
+                                    else -> Green300
+                                }
+                            ),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        if (isToday) "오늘" else LocalDate.ofEpochDay(day.epochDay)
+                            .format(DateTimeFormatter.ofPattern("E", Locale.KOREAN)),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal,
+                        ),
+                        color = if (isToday) LabelPrimary else LabelTertiary,
+                    )
+                }
             }
         }
     }
 }
+
+private val WEEKLY_BAR_MAX = 64.dp
+private val StreakOrange = androidx.compose.ui.graphics.Color(0xFFFF7A1A)
 
 @Composable
 private fun StatCard(

@@ -22,14 +22,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,7 +52,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,9 +70,9 @@ import com.navercorp.nid.oauth.OAuthLoginCallback
 import com.sm.myapplication.BuildConfig
 import com.sm.myapplication.R
 import com.sm.myapplication.ui.theme.Black50
-import com.sm.myapplication.ui.theme.GreenDark
-import com.sm.myapplication.ui.theme.GreenLight
-import com.sm.myapplication.ui.theme.GreenLighter
+import com.sm.myapplication.ui.theme.BgGreenLight
+import com.sm.myapplication.ui.theme.Green700
+import com.sm.myapplication.ui.theme.Green900
 import com.sm.myapplication.ui.theme.GreenPrimary
 
 @Composable
@@ -123,67 +126,48 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    0f to GreenLighter.copy(alpha = 0.55f),
-                    0.30f to GreenLighter.copy(alpha = 0.22f),
+                    0f to BgGreenLight,
+                    0.30f to BgGreenLight.copy(alpha = 0.5f),
                     0.58f to Color.White,
                     1f to Color.White,
                 )
             ),
     ) {
-        // 우측 상단에 은은하게 번지는 장식용 블롭 — 화면에 공기감을 더함
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 60.dp, y = (-40).dp)
-                .size(220.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(GreenLight.copy(alpha = 0.35f), Color.Transparent),
-                    )
-                )
-        )
-
-        Column(modifier = Modifier.fillMaxSize()) {
-            // 헤더
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.White),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Black50)
+        // 카카오톡에 카카오계정이 연결되지 않은 경우 등 실패 시 카카오계정 로그인으로 재시도
+        // (사용자가 직접 취소한 경우는 제외)
+        val startKakaoLogin: () -> Unit = {
+            val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
+                if (token != null) {
+                    viewModel.onKakaoTokenReceived(token.accessToken, onSuccess = onLoginSuccess)
+                } else if (error != null) {
+                    val cancelled = error is ClientError && error.reason == ClientErrorCause.Cancelled
+                    if (!cancelled) viewModel.onKakaoLoginFailed(error.message)
                 }
-                Spacer(Modifier.weight(1f))
-                Text("로그인", color = Black50, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                Spacer(Modifier.weight(1f))
-                Spacer(Modifier.size(40.dp))
             }
 
+            if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
+                    if (error != null && !(error is ClientError && error.reason == ClientErrorCause.Cancelled)) {
+                        UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+                    } else {
+                        callback(token, error)
+                    }
+                }
+            } else {
+                UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+            }
+        }
+
+        Column(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = 24.dp)) {
             Spacer(Modifier.weight(1f))
 
-            // 브랜드 + 로그인, 화면 중앙에 한 덩어리로 배치
-            // 타이머 배지 — 은은한 글로우 위에 그림자 있는 흰 원판, 그 위에 아이콘
+            // 브랜드: 앱 아이콘 배지 + 2초마다 퍼지는 파동 (효과는 이것 하나만)
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .size(148.dp),
+                    .size(140.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(148.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(GreenLight.copy(alpha = 0.6f), Color.Transparent),
-                            )
-                        )
-                )
                 // 2초마다 반복되는 핑 파동
                 Box(
                     modifier = Modifier
@@ -196,7 +180,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                     modifier = Modifier.size(88.dp),
                     shape = CircleShape,
                     color = Color.White,
-                    shadowElevation = 10.dp,
+                    shadowElevation = 4.dp,
                 ) {}
                 // 앱 런처 아이콘(T16a)과 같은 모습: 108 캔버스 중 런처가 보여주는 가운데 72 영역을 원에 맞춤.
                 // 전경의 연두 외곽선이 배경색(#8CBC69 = GreenPrimary)과 같아야 하므로 단색 배경을 쓴다.
@@ -215,33 +199,48 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
             Text(
                 text = "STUDY EYE",
-                color = GreenDark,
+                color = Green900,
                 fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 letterSpacing = 0.3.sp,
-                style = androidx.compose.ui.text.TextStyle(
-                    shadow = Shadow(color = Color.Black.copy(alpha = 0.08f), blurRadius = 6f, offset = androidx.compose.ui.geometry.Offset(0f, 2f)),
-                ),
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
 
-                Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
 
             Text(
-                text = "공부 시간을 기록하고\n나만의 페이스를 만들어보세요",
+                text = "카메라가 확인하는 진짜 공부 시간",
                 color = Black50,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
-                lineHeight = 19.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(horizontal = 32.dp),
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(28.dp))
+
+            // 처음 보는 사용자에게 앱이 무엇을 하는지 보여주는 핵심 기능 3가지
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White,
+                shadowElevation = 3.dp,
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    FeatureRow(Icons.Rounded.Visibility, "순공모드", "자리를 비우면 타이머가 알아서 멈춰요")
+                    FeatureRow(Icons.Rounded.EmojiEvents, "랭킹 · 티어", "최근 7일 순공 시간으로 함께 경쟁해요")
+                    FeatureRow(Icons.Rounded.CalendarMonth, "공부 기록", "매일의 공부가 잔디처럼 쌓여요")
+                }
+            }
+
+            Spacer(Modifier.weight(0.45f))
 
             val errorMessage = uiState.errorMessage
             if (errorMessage != null) {
@@ -250,38 +249,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                     color = Color(0xFFD32F2F),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(start = 24.dp, end = 24.dp, bottom = 10.dp),
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
                 )
-            }
-
-            if (BuildConfig.DEBUG) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFF6C63FF),
-                    shadowElevation = 6.dp,
-                    onClick = {
-                        if (uiState.isLoading) return@Surface
-                        viewModel.onDevLogin("admin", onSuccess = onLoginSuccess)
-                    },
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            if (uiState.isLoading) "로그인 중..." else "관리자 로그인",
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
             }
 
             if (BuildConfig.DEV_MODE) {
@@ -299,7 +268,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                     placeholder = { Text("사용자명 (예: testuser)") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
                         .height(48.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
@@ -315,7 +283,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
                         .height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     color = GreenPrimary,
@@ -339,45 +306,53 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                     }
                 }
             } else {
-                Row(
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                // 카카오 로그인 (주 버튼, 카카오 디자인 가이드 색상)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .alpha(if (uiState.isLoading) 0.5f else 1f),
+                    shape = RoundedCornerShape(14.dp),
+                    color = KakaoYellow,
+                    enabled = !uiState.isLoading,
+                    onClick = startKakaoLogin,
                 ) {
-                    // 카카오 로그인
-                    SocialCircleButton(
-                        enabled = !uiState.isLoading,
-                        onClick = {
-                            val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
-                                if (token != null) {
-                                    viewModel.onKakaoTokenReceived(token.accessToken, onSuccess = onLoginSuccess)
-                                } else if (error != null) {
-                                    val cancelled = error is ClientError && error.reason == ClientErrorCause.Cancelled
-                                    if (!cancelled) viewModel.onKakaoLoginFailed(error.message)
-                                }
-                            }
-
-                            if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
-                                // 카카오톡에 카카오계정이 연결되지 않은 경우 등 실패 시 카카오계정 로그인으로 재시도
-                                // (사용자가 직접 취소한 경우는 제외)
-                                UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
-                                    if (error != null && !(error is ClientError && error.reason == ClientErrorCause.Cancelled)) {
-                                        UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
-                                    } else {
-                                        callback(token, error)
-                                    }
-                                }
-                            } else {
-                                UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
-                            }
-                        },
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_login_kakao),
-                            contentDescription = "카카오 로그인",
-                            modifier = Modifier.fillMaxSize(),
+                        Icon(
+                            painter = painterResource(R.drawable.ic_kakao_symbol),
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (uiState.isLoading) "로그인 중..." else "카카오로 시작하기",
+                            color = Color.Black.copy(alpha = 0.85f),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
                         )
                     }
+                }
 
+                Spacer(Modifier.height(18.dp))
+
+                Text(
+                    text = "다른 계정으로 로그인",
+                    color = Black50,
+                    fontSize = 12.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
                     // 네이버 로그인
                     SocialCircleButton(
                         enabled = !uiState.isLoading,
@@ -435,13 +410,37 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
                         Image(
                             painter = painterResource(R.drawable.ic_login_google),
                             contentDescription = "구글 로그인",
-                            modifier = Modifier.fillMaxSize().padding(15.dp),
+                            modifier = Modifier.fillMaxSize().padding(10.dp),
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/** 카카오 로그인 버튼 배경색 (카카오 디자인 가이드) */
+private val KakaoYellow = Color(0xFFFEE500)
+
+// 로그인 화면의 기능 소개 한 줄: 아이콘 + 제목 + 설명
+@Composable
+private fun FeatureRow(icon: ImageVector, title: String, description: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(BgGreenLight),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = Green700, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text(title, color = Color.Black.copy(alpha = 0.85f), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            Text(description, color = Black50, fontSize = 13.sp)
         }
     }
 }
@@ -456,12 +455,11 @@ private fun SocialCircleButton(
 ) {
     Surface(
         modifier = Modifier
-            .size(58.dp)
+            .size(44.dp)
             .alpha(if (enabled) 1f else 0.5f),
         shape = CircleShape,
         color = Color.White,
         border = borderColor?.let { BorderStroke(1.dp, it) },
-        shadowElevation = 4.dp,
         enabled = enabled,
         onClick = onClick,
     ) {

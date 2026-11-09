@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
@@ -56,14 +57,21 @@ fun MyApplicationTheme(
     )
 }
 
+/** 어두운 화면(순공모드)용 상태바. 화면을 벗어나면 밝은 화면용(어두운 아이콘)으로 되돌린다. */
 @Composable
 fun DarkStatusBarEffect() {
     val view = LocalView.current
     if (!view.isInEditMode) {
-        SideEffect {
+        DisposableEffect(view) {
             val window = (view.context as Activity).window
+            val controller = WindowCompat.getInsetsController(window, view)
             window.statusBarColor = FocusBg.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            controller.isAppearanceLightStatusBars = false
+            onDispose {
+                // 되돌리지 않으면 흰 배경 위에 흰 아이콘이 남아 시간·배터리가 안 보였다
+                window.statusBarColor = BgGreenLight.toArgb()
+                controller.isAppearanceLightStatusBars = true
+            }
         }
     }
 }

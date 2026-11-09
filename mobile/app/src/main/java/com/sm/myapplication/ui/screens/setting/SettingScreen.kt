@@ -275,7 +275,7 @@ private fun ProfileHeader(name: String) {
                         .background(Brush.linearGradient(listOf(Color(0xFFD8EFE0), Green300))),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val initial = name.trim().takeIf { it.isNotEmpty() }?.take(1)
+                    val initial = name.trim().takeIf { it.isNotEmpty() }?.take(1)?.uppercase()
                     if (initial != null) {
                         Text(
                             text = initial,
@@ -613,7 +613,7 @@ fun HelpScreen(onBack: () -> Unit) {
 
             SectionHeader("자주 묻는 질문")
             InsetCard {
-                FaqRow("기본 모드와 순공 모드는 뭐가 다른가요?", "기본 모드는 직접 시작·일시정지합니다. 순공 모드는 전면 카메라로 얼굴을 확인해 자리를 비우면 자동으로 멈춥니다.")
+                FaqRow("일반 타이머와 순공 모드는 뭐가 다른가요?", "일반 타이머는 직접 시작·일시정지합니다. 순공 모드는 전면 카메라로 얼굴을 확인해 자리를 비우면 자동으로 멈춥니다.")
                 RowDivider(inset = 16.dp)
                 FaqRow("순공 모드 제스처는 어떻게 쓰나요?", "손바닥을 펴면 수동 일시정지, 주먹을 쥐면 시작·재개됩니다.")
                 RowDivider(inset = 16.dp)
