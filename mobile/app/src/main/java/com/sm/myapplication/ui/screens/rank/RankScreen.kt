@@ -51,6 +51,8 @@ import com.sm.myapplication.ui.components.InsetCard
 import com.sm.myapplication.ui.components.DialogHeader
 import com.sm.myapplication.ui.components.RowDivider
 import com.sm.myapplication.ui.components.SummaryHeader
+import com.sm.myapplication.ui.components.TierBadge
+import com.sm.myapplication.ui.components.tierBadgeRes
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.theme.AccentGreen
 import com.sm.myapplication.ui.theme.AccentInk
@@ -64,8 +66,8 @@ import com.sm.myapplication.ui.theme.GroupedBg
 import com.sm.myapplication.ui.theme.LabelPrimary
 import com.sm.myapplication.ui.theme.LabelSecondary
 
-private data class RankRow(val rank: Long, val name: String, val time: String, val isMe: Boolean = false)
-private data class TopRanker(val rank: Long, val name: String, val time: String, val barHeight: Int)
+private data class RankRow(val rank: Long, val name: String, val time: String, val tier: String?, val isMe: Boolean = false)
+private data class TopRanker(val rank: Long, val name: String, val time: String, val tier: String?, val barHeight: Int)
 
 /** 목록에 보여줄 최대 순위(4위~). 내가 그 밖이면 맨 아래에 따로 붙인다. */
 private const val LIST_LIMIT = 30
@@ -112,9 +114,9 @@ fun RankScreen(onOpenTier: () -> Unit) {
 
     // 목록: 4위 ~ LIST_LIMIT위. 내가 그 밖이면 '⋯' 다음에 내 줄을 붙인다.
     val listRows = all.drop(3).take(LIST_LIMIT - 3).map {
-        RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), isMe = it.memberId == me?.memberId)
+        RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), it.tierName, isMe = it.memberId == me?.memberId)
     }
-    val myRow = me?.let { RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), isMe = true) }
+    val myRow = me?.let { RankRow(it.rankPosition, it.nickname, formatHms(it.totalTime), it.tierName, isMe = true) }
     val meOutsideList = me != null && all.indexOf(me) >= LIST_LIMIT
     val meInList = meOutsideList || listRows.any { it.isMe }
     val showPinned = myRow != null && meInList && viewportBottom > 0f &&
@@ -166,7 +168,7 @@ fun RankScreen(onOpenTier: () -> Unit) {
                 // 시상대는 2위-1위-3위 순서로 배치
                 val barHeights = listOf(88, 62, 50)
                 val top3 = all.take(3).mapIndexed { i, r ->
-                    TopRanker(r.rankPosition, r.nickname, formatHm(r.totalTime), barHeights[i])
+                    TopRanker(r.rankPosition, r.nickname, formatHm(r.totalTime), r.tierName, barHeights[i])
                 }
                 val podiumOrder = listOfNotNull(top3.getOrNull(1), top3.getOrNull(0), top3.getOrNull(2))
                 Podium(podiumOrder)
@@ -252,13 +254,18 @@ private fun PodiumColumn(ranker: TopRanker, modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(2.dp))
         }
-        Box(
-            modifier = Modifier
-                .size(if (isFirst) 54.dp else 46.dp)
-                .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(Green300, AccentGreen)))
-                .then(if (isFirst) Modifier.border(2.dp, AccentGreen, CircleShape) else Modifier),
-        )
+        val avatarSize = if (isFirst) 54.dp else 46.dp
+        if (tierBadgeRes(ranker.tier) != null) {
+            TierBadge(ranker.tier, size = avatarSize)
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(avatarSize)
+                    .clip(CircleShape)
+                    .background(Brush.linearGradient(listOf(Green300, AccentGreen)))
+                    .then(if (isFirst) Modifier.border(2.dp, AccentGreen, CircleShape) else Modifier),
+            )
+        }
         Spacer(Modifier.height(6.dp))
         Text(ranker.name, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = LabelPrimary)
         Text(ranker.time, style = MaterialTheme.typography.labelSmall, color = LabelSecondary)
@@ -300,15 +307,19 @@ private fun RankListRow(row: RankRow, modifier: Modifier = Modifier) {
             color = if (row.isMe) AccentInk else LabelSecondary,
             modifier = Modifier.width(26.dp),
         )
-        Box(
-            modifier = Modifier
-                .size(26.dp)
-                .clip(CircleShape)
-                .background(
-                    if (row.isMe) Brush.linearGradient(listOf(AccentGreen, AccentInk))
-                    else Brush.linearGradient(listOf(Color(0xFFE3E4E8), Color(0xFFD5D7DD)))
-                )
-        )
+        if (tierBadgeRes(row.tier) != null) {
+            TierBadge(row.tier, size = 26.dp)
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (row.isMe) Brush.linearGradient(listOf(AccentGreen, AccentInk))
+                        else Brush.linearGradient(listOf(Color(0xFFE3E4E8), Color(0xFFD5D7DD)))
+                    )
+            )
+        }
         Spacer(Modifier.width(10.dp))
         Text(
             text = row.name,
@@ -333,11 +344,11 @@ fun TierRankDialog(onClose: () -> Unit) {
     // 서버 tier_meta(Diamond 4 / Platinum 15 / Gold 45 / Silver 80 / Bronze 100)와 같은 기준.
     // 최근 7일 공부시간 순위의 상위 % 로 정해지며, 최근 7일 기록이 없으면 랭킹·티어에서 제외된다.
     val tiers = listOf(
-        Triple("다이아", "상위 4% 이내", Green900),
-        Triple("플래티넘", "상위 15% 이내", Green700),
-        Triple("골드", "상위 45% 이내", AccentGreen),
-        Triple("실버", "상위 80% 이내", Green300),
-        Triple("브론즈", "그 외 (최근 7일 공부 기록이 있는 회원)", Color(0xFFC9E9D4)),
+        "Diamond" to "상위 4% 이내",
+        "Platinum" to "상위 15% 이내",
+        "Gold" to "상위 45% 이내",
+        "Silver" to "상위 80% 이내",
+        "Bronze" to "그 외 (최근 7일 순공 기록이 있는 회원)",
     )
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
@@ -351,17 +362,12 @@ fun TierRankDialog(onClose: () -> Unit) {
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 22.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                tiers.forEach { (name, range, color) ->
+                tiers.forEach { (tier, range) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                        )
+                        TierBadge(tier, size = 36.dp)
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text(name, style = MaterialTheme.typography.titleSmall, color = LabelPrimary)
+                            Text(tierDisplayName(tier), style = MaterialTheme.typography.titleSmall, color = LabelPrimary)
                             Text(range, style = MaterialTheme.typography.bodySmall, color = LabelSecondary)
                         }
                     }

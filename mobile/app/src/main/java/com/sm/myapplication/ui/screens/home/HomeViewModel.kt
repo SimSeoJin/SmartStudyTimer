@@ -22,26 +22,22 @@ data class HomeUiState(
     val ddayLabel: String = "기말 고사",
     val todayStudyMs: Long = 0L,
     val tierName: String = "-",
+    /** 배지 이미지용 서버 티어명(Diamond 등). 티어가 없으면 null */
+    val tierServerName: String? = null,
 )
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = AppRepository.get(app)
 
-    // 서버 랭킹 기준 내 티어(표시용 한글). 미로그인·네트워크 실패면 "-".
-    private val tierName = MutableStateFlow("-")
+    // 서버 랭킹 기준 내 티어(서버 이름). 최근 7일 기록이 없으면 NO_RANK, 미로그인·네트워크 실패면 null.
+    private val tier = MutableStateFlow<String?>(null)
 
     init {
         viewModelScope.launch { repo.cleanupAbnormalSessions() }
     }
 
     fun refreshTier() {
-        viewModelScope.launch {
-            tierName.value = when (val tier = repo.fetchMyTier()) {
-                null -> "-"
-                AppRepository.NO_RANK -> "기록 없음"
-                else -> tierDisplayName(tier)
-            }
-        }
+        viewModelScope.launch { tier.value = repo.fetchMyTier() }
     }
 
     private val today: Long
@@ -52,7 +48,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         repo.ddayEpochDay,
         repo.ddayLabel,
         repo.observeTodaySessionMs(today),
-        tierName,
+        tier,
     ) { todos, dday, label, ms, tier ->
         HomeUiState(
             todayTodos = todos.take(4),
@@ -61,7 +57,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             ddayEpochDay = dday,
             ddayLabel = label,
             todayStudyMs = ms,
-            tierName = tier,
+            tierName = when (tier) {
+                null -> "-"
+                AppRepository.NO_RANK -> "기록 없음"
+                else -> tierDisplayName(tier)
+            },
+            tierServerName = tier?.takeIf { it != AppRepository.NO_RANK },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 

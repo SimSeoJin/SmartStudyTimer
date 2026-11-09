@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 티어 배지: 실버 (방패) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- 테두리 -->
+    <path
+        android:fillColor="#7E8A97"
+        android:pathData="M32,5 L55,13 V31 C55,45 45,54 32,60 C19,54 9,45 9,31 V13 Z" />
+    <!-- 방패 면 -->
+    <path
+        android:fillColor="#C9D1D9"
+        android:pathData="M32,9.5 L51,16 V31 C51,42.5 42.5,50 32,55 C21.5,50 13,42.5 13,31 V16 Z" />
+    <!-- 광택 -->
+    <path
+        android:pathData="M17,30 V19.5 L28,15.5"
+        android:strokeColor="#F1F4F7"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- 눈 -->
+    <path
+        android:fillColor="#1A1A1D"
+        android:pathData="M19,32 Q32,21 45,32 Q32,43 19,32 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M27,32 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 Z" />
+    <path
+        android:fillColor="#1A1A1D"
+        android:pathData="M29.8,32 a2.2,2.2 0 1,0 4.4,0 a2.2,2.2 0 1,0 -4.4,0 Z" />
+</vector>

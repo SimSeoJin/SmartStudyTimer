@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 티어 배지: 골드 (방패 + 별) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- 테두리 -->
+    <path
+        android:fillColor="#B07F0C"
+        android:pathData="M32,8 L55,15 V32 C55,46 45,55 32,61 C19,55 9,46 9,32 V15 Z" />
+    <!-- 방패 면 -->
+    <path
+        android:fillColor="#F2C230"
+        android:pathData="M32,12.5 L51,18 V32 C51,43.5 42.5,51 32,56 C21.5,51 13,43.5 13,32 V18 Z" />
+    <!-- 광택 -->
+    <path
+        android:pathData="M17,31 V21.5 L26,18.5"
+        android:strokeColor="#FFE58A"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- 별 -->
+    <path
+        android:fillColor="#F2C230"
+        android:strokeColor="#B07F0C"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:pathData="M32,0.8 L33.9,5.4 L38.9,5.8 L35.1,9 L36.3,13.9 L32,11.2 L27.7,13.9 L28.9,9 L25.1,5.8 L30.1,5.4 Z" />
+    <!-- 눈 -->
+    <path
+        android:fillColor="#1A1A1D"
+        android:pathData="M19,34 Q32,23 45,34 Q32,45 19,34 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M27,34 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 Z" />
+    <path
+        android:fillColor="#1A1A1D"
+        android:pathData="M29.8,34 a2.2,2.2 0 1,0 4.4,0 a2.2,2.2 0 1,0 -4.4,0 Z" />
+</vector>
