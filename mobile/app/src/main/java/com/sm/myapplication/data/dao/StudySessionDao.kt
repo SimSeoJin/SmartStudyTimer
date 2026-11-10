@@ -20,8 +20,14 @@ interface StudySessionDao {
     @Query("SELECT dateEpochDay AS day, COALESCE(SUM(durationMs), 0) AS total FROM study_sessions WHERE dateEpochDay BETWEEN :fromDay AND :toDay AND durationMs <= 43200000 GROUP BY dateEpochDay")
     fun observeMonthlyTotals(fromDay: Long, toDay: Long): Flow<List<DailyTotal>>
 
+    @Query("SELECT mode AS mode, COALESCE(SUM(durationMs), 0) AS total FROM study_sessions WHERE dateEpochDay BETWEEN :fromDay AND :toDay AND durationMs <= 43200000 GROUP BY mode")
+    fun observeModeTotals(fromDay: Long, toDay: Long): Flow<List<ModeTotal>>
+
     @Query("DELETE FROM study_sessions WHERE durationMs > 43200000")
     suspend fun deleteAbnormal()
 }
 
 data class DailyTotal(val day: Long, val total: Long)
+
+/** mode는 Room에 문자열(StudyMode.name)로 저장돼 있다 */
+data class ModeTotal(val mode: String, val total: Long)

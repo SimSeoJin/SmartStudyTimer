@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -158,8 +159,122 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
             }
         }
 
+        // 기록이 없는 날을 골라도 볼 거리가 있도록, 보고 있는 달의 요약을 아래에 둔다
+        SectionHeader("${state.yearMonth.monthValue}월 기록")
+        MonthSummaryCard(
+            totalsByDay = state.dayTotalsMs,
+            pureMs = state.pureMs,
+            basicMs = state.basicMs,
+        )
+
         Spacer(Modifier.height(24.dp))
     }
+}
+
+@Composable
+private fun MonthSummaryCard(totalsByDay: Map<Long, Long>, pureMs: Long, basicMs: Long) {
+    val totalMs = pureMs + basicMs
+    InsetCard {
+        if (totalMs <= 0L) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Rounded.Visibility, contentDescription = null, tint = Green700, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    "공부하면 날짜 칸이 초록색으로 채워지고, 많이 한 날일수록 진해져요.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LabelSecondary,
+                )
+            }
+            return@InsetCard
+        }
+
+        // 순공 / 일반 비율 막대
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp)) {
+            val pureRatio = pureMs.toFloat() / totalMs
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("순공 비율", style = MaterialTheme.typography.titleSmall, color = LabelPrimary)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "${(pureRatio * 100).toInt()}%",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = AccentInk,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(CircleShape)
+                    .background(HeatLevel2),
+            ) {
+                if (pureRatio > 0f) {
+                    Box(Modifier.weight(pureRatio.coerceAtLeast(0.02f)).fillMaxHeight().background(Green500))
+                }
+                if (pureRatio < 1f) Spacer(Modifier.weight((1f - pureRatio).coerceAtLeast(0.02f)))
+            }
+            Spacer(Modifier.height(8.dp))
+            Row {
+                LegendDot(Green500, "순공 ${formatStudyDuration(pureMs)}")
+                Spacer(Modifier.width(14.dp))
+                LegendDot(HeatLevel2, "일반 ${formatStudyDuration(basicMs)}")
+            }
+        }
+
+        RowDivider(inset = 16.dp)
+
+        val best = totalsByDay.maxByOrNull { it.value }
+        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+            MonthStat(
+                label = "가장 많이 한 날",
+                value = best?.let { LocalDate.ofEpochDay(it.key).format(DateTimeFormatter.ofPattern("M월 d일")) } ?: "-",
+                sub = best?.let { formatStudyDuration(it.value) },
+                modifier = Modifier.weight(1f),
+            )
+            MonthStat(
+                label = "최장 연속",
+                value = "${longestStreak(totalsByDay)}일",
+                sub = "공부한 날이 이어진 기간",
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LegendDot(color: Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(5.dp))
+        Text(text, style = MaterialTheme.typography.labelSmall, color = LabelSecondary)
+    }
+}
+
+@Composable
+private fun MonthStat(label: String, value: String, sub: String?, modifier: Modifier = Modifier) {
+    Column(modifier.padding(horizontal = 16.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = LabelSecondary)
+        Spacer(Modifier.height(2.dp))
+        Text(value, style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
+        if (sub != null) Text(sub, style = MaterialTheme.typography.labelSmall, color = LabelTertiary)
+    }
+}
+
+/** 그 달 안에서 기록이 있는 날이 가장 길게 이어진 일수 */
+private fun longestStreak(totalsByDay: Map<Long, Long>): Int {
+    val days = totalsByDay.filter { it.value > 0 }.keys.sorted()
+    var best = 0
+    var run = 0
+    var prev: Long? = null
+    for (d in days) {
+        run = if (prev != null && d == prev + 1) run + 1 else 1
+        if (run > best) best = run
+        prev = d
+    }
+    return best
 }
 
 /** 모드는 한 줄, 시간은 오른쪽에 두 줄(구간 / 총 시간)로 정렬한다. */
