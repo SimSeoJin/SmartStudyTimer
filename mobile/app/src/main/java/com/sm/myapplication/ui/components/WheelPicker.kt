@@ -13,12 +13,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import java.time.LocalDate
 
-/** 년·월·일을 각각 위아래로 스크롤해서 고르는 휠. 월/년이 바뀌면 그 달의 말일에 맞춰 일 범위를 조정한다. */
+/**
+ * 년·월·일을 각각 위아래로 스크롤해서 고르는 휠. 월/년이 바뀌면 그 달의 말일에 맞춰 일 범위를 조정한다.
+ * [yearRange]를 주지 않으면 디데이용(작년 ~ 10년 뒤) 범위를 쓴다.
+ */
 @Composable
-fun DateWheelPicker(date: LocalDate, onDateChange: (LocalDate) -> Unit) {
+fun DateWheelPicker(date: LocalDate, onDateChange: (LocalDate) -> Unit, yearRange: IntRange? = null) {
     val thisYear = LocalDate.now().year
-    val minYear = minOf(thisYear - 1, date.year)
-    val maxYear = maxOf(thisYear + 10, date.year)
+    val minYear = minOf(yearRange?.first ?: (thisYear - 1), date.year)
+    val maxYear = maxOf(yearRange?.last ?: (thisYear + 10), date.year)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
