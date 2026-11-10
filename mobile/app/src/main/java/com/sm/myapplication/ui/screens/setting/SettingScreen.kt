@@ -204,7 +204,6 @@ fun SettingScreen(
                     subtitle = "영상으로 사용법 보기",
                     icon = Icons.AutoMirrored.Rounded.HelpOutline,
                     iconColors = listOf(SystemPurpleLight, SystemPurple),
-                    value = "v1.0",
                     showChevron = true,
                     onClick = onOpenHelp,
                 )
@@ -215,6 +214,15 @@ fun SettingScreen(
                 text = "로그아웃",
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onClick = { showLogoutDialog = true },
+            )
+            // 버전은 도움말 줄에 붙어 있으면 도움말의 버전처럼 읽혀서, 앱 정보로 맨 아래에 따로 둔다
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "STUDY EYE 버전 ${com.sm.myapplication.BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.labelSmall,
+                color = LabelTertiary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(28.dp))
         }
