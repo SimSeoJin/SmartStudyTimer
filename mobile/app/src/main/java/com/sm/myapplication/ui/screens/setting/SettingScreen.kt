@@ -53,6 +53,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.sm.myapplication.data.datastore.AppPreferences
+import androidx.compose.material.icons.rounded.ChevronRight
+import com.sm.myapplication.ui.components.DialogHeader
+import com.sm.myapplication.ui.components.DateWheelPicker
 import com.sm.myapplication.network.ApiClient
 import com.sm.myapplication.network.dto.MemberInfoResponse
 import com.sm.myapplication.network.dto.MemberUpdateRequest
@@ -129,7 +132,7 @@ fun SettingScreen(
             .fillMaxSize()
             .background(GroupedBg),
     ) {
-        ProfileHeader(name = name, email = email)
+        ProfileHeader(name = name, email = email, onEditProfile = onOpenMyInfo)
 
         Column(
             modifier = Modifier
@@ -240,7 +243,7 @@ fun SettingScreen(
 
 /** 초록 그라데이션 헤더 + 원형 프로필 + 이름 + 밑줄 이메일. */
 @Composable
-private fun ProfileHeader(name: String, email: String) {
+private fun ProfileHeader(name: String, email: String, onEditProfile: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -306,11 +309,15 @@ private fun ProfileHeader(name: String, email: String) {
                 color = CardWhite,
             )
             Spacer(Modifier.height(2.dp))
+            // 누르면 프로필 화면으로 가서 이메일을 등록·수정할 수 있다
             Text(
-                text = email.ifBlank { "이메일 미등록" },
+                text = if (email.isBlank()) "이메일 등록하기 ›" else email,
                 style = MaterialTheme.typography.bodySmall,
                 color = CardWhite.copy(alpha = 0.9f),
-                textDecoration = TextDecoration.Underline,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .pressable(onClick = onEditProfile)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
             )
         }
     }
@@ -338,15 +345,15 @@ fun MyInfoScreen(onBack: () -> Unit) {
     var saving by remember { mutableStateOf(false) }
     var birth by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var education by remember { mutableStateOf(educationOptions.first()) }
+    var education by remember { mutableStateOf("") }
+    var showBirthPicker by remember { mutableStateOf(false) }
     // 마지막으로 저장된 생년월일·이메일·학력 (바뀐 게 있을 때만 저장 버튼을 켠다)
     var savedDetails by remember { mutableStateOf(Triple("", "", "")) }
 
     LaunchedEffect(Unit) {
         birth = prefs.birthDate.first()
         email = prefs.email.first()
-        education = prefs.education.first().ifBlank { educationOptions.first() }
-        // 화면에 보이는 기본 선택값(중학생)과 같은 기준으로 비교해야, 아무것도 안 바꿨을 때 저장 버튼이 꺼진다
+        education = prefs.education.first()
         savedDetails = Triple(birth, email, education)
         nickname = prefs.memberName.first()
         savedNickname = nickname
@@ -365,7 +372,8 @@ fun MyInfoScreen(onBack: () -> Unit) {
     val trimmed = nickname.trim()
     val nicknameChanged = memberId != null && trimmed.isNotEmpty() && trimmed != savedNickname
     val detailsChanged = Triple(birth, email, education) != savedDetails
-    val canSave = !saving && trimmed.isNotEmpty() && (nicknameChanged || detailsChanged)
+    val emailValid = email.isBlank() || android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    val canSave = !saving && trimmed.isNotEmpty() && emailValid && (nicknameChanged || detailsChanged)
 
     Column(
         Modifier
@@ -396,9 +404,17 @@ fun MyInfoScreen(onBack: () -> Unit) {
 
             SectionHeader("기본 정보")
             InsetCard {
-                FieldRow("생년월일", birth, "2007.01.01") { birth = it; message = null }
+                PickerRow("생년월일", birth, "선택해 주세요") { showBirthPicker = true }
                 RowDivider(inset = 16.dp)
                 FieldRow("이메일", email, "example@email.com") { email = it; message = null }
+            }
+            if (!emailValid) {
+                Text(
+                    text = "이메일 형식을 확인해 주세요. (예: name@email.com)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Destructive,
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
+                )
             }
 
             SectionHeader("학력 · 학년")
@@ -493,6 +509,83 @@ fun MyInfoScreen(onBack: () -> Unit) {
             }
             Spacer(Modifier.height(28.dp))
         }
+    }
+
+    if (showBirthPicker) {
+        BirthDatePickerDialog(
+            initial = parseBirthDate(birth),
+            onDismiss = { showBirthPicker = false },
+            onPick = { picked ->
+                birth = picked.format(BIRTH_DATE_FORMAT)
+                message = null
+                showBirthPicker = false
+            },
+        )
+    }
+}
+
+private val BIRTH_DATE_FORMAT: java.time.format.DateTimeFormatter =
+    java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd")
+
+/** 저장된 "yyyy.MM.dd"를 읽는다. 비었거나 예전에 직접 입력한 형식이 달라 못 읽으면 2007-01-01에서 시작. */
+private fun parseBirthDate(text: String): LocalDate =
+    runCatching { LocalDate.parse(text.trim(), BIRTH_DATE_FORMAT) }.getOrElse { LocalDate.of(2007, 1, 1) }
+
+@Composable
+private fun BirthDatePickerDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) {
+    var date by remember { mutableStateOf(initial) }
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .clip(RoundedCornerShape(24.dp))
+                .background(CardWhite),
+        ) {
+            DialogHeader(title = "생년월일", onClose = onDismiss)
+            Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
+                DateWheelPicker(
+                    date = date,
+                    onDateChange = { date = it },
+                    yearRange = 1950..LocalDate.now().year,
+                )
+                Spacer(Modifier.height(18.dp))
+                PrimaryButton(text = "선택") { onPick(date) }
+            }
+        }
+    }
+}
+
+/** 눌러서 값을 고르는 줄 (입력칸 대신 선택 창을 띄운다). FieldRow와 같은 모양. */
+@Composable
+private fun PickerRow(label: String, value: String, placeholder: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = LabelPrimary,
+            modifier = Modifier.size(width = 84.dp, height = 22.dp),
+        )
+        Text(
+            value.ifBlank { placeholder },
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (value.isBlank()) LabelTertiary else LabelPrimary,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = LabelTertiary,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
