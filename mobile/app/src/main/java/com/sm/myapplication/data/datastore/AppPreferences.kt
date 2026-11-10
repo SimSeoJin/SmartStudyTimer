@@ -19,6 +19,9 @@ class AppPreferences(private val context: Context) {
     private val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token")
     private val KEY_MEMBER_ID = longPreferencesKey("member_id")
     private val KEY_MEMBER_NAME = stringPreferencesKey("member_name")
+    private val KEY_EMAIL = stringPreferencesKey("email")
+    private val KEY_EDUCATION = stringPreferencesKey("education")
+    private val KEY_BIRTH_DATE = stringPreferencesKey("birth_date")
     private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
     private val KEY_TODO_TOTAL = intPreferencesKey("todo_total")
     private val KEY_TODO_DONE = intPreferencesKey("todo_done")
@@ -31,6 +34,9 @@ class AppPreferences(private val context: Context) {
     val accessToken: Flow<String?> = context.dataStore.data.map { it[KEY_ACCESS_TOKEN] }
     val memberId: Flow<Long?> = context.dataStore.data.map { it[KEY_MEMBER_ID] }
     val memberName: Flow<String> = context.dataStore.data.map { it[KEY_MEMBER_NAME] ?: "" }
+    val email: Flow<String> = context.dataStore.data.map { it[KEY_EMAIL] ?: "" }
+    val education: Flow<String> = context.dataStore.data.map { it[KEY_EDUCATION] ?: "" }
+    val birthDate: Flow<String> = context.dataStore.data.map { it[KEY_BIRTH_DATE] ?: "" }
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { it[KEY_NOTIFICATIONS_ENABLED] ?: true }
     val todoTotal: Flow<Int> = context.dataStore.data.map { it[KEY_TODO_TOTAL] ?: 0 }
     val todoDone: Flow<Int> = context.dataStore.data.map { it[KEY_TODO_DONE] ?: 0 }
@@ -74,6 +80,15 @@ class AppPreferences(private val context: Context) {
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit {
             it[KEY_NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    /** 생년월일·이메일·학력은 기기에만 저장한다(서버로 보내지 않음). */
+    suspend fun setProfileDetails(email: String, education: String, birthDate: String) {
+        context.dataStore.edit {
+            it[KEY_EMAIL] = email
+            it[KEY_EDUCATION] = education
+            it[KEY_BIRTH_DATE] = birthDate
         }
     }
 

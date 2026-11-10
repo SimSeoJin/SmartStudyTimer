@@ -93,6 +93,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+private val educationOptions = listOf("중학생", "고1", "고2", "고3", "N수생", "대학생")
+
 @Composable
 fun SettingScreen(
     onOpenMyInfo: () -> Unit,
@@ -108,12 +110,16 @@ fun SettingScreen(
     var notificationsEnabled by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var education by remember { mutableStateOf("") }
     var ddayLabel by remember { mutableStateOf("") }
     var ddayEpochDay by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
         notificationsEnabled = prefs.notificationsEnabled.first()
         name = prefs.memberName.first()
+        email = prefs.email.first()
+        education = prefs.education.first()
         ddayLabel = prefs.ddayLabel.first()
         ddayEpochDay = prefs.ddayEpochDay.first()
     }
@@ -123,7 +129,7 @@ fun SettingScreen(
             .fillMaxSize()
             .background(GroupedBg),
     ) {
-        ProfileHeader(name = name)
+        ProfileHeader(name = name, email = email)
 
         Column(
             modifier = Modifier
@@ -157,9 +163,10 @@ fun SettingScreen(
             InsetCard {
                 SettingRow(
                     title = "프로필",
-                    subtitle = "랭킹에 표시되는 닉네임",
+                    subtitle = "닉네임, 생년월일, 학력·학년",
                     icon = Icons.Rounded.Person,
                     iconColors = listOf(SystemBlueLight, SystemBlue),
+                    value = education.takeIf { it.isNotBlank() },
                     showChevron = true,
                     onClick = onOpenMyInfo,
                 )
@@ -231,9 +238,9 @@ fun SettingScreen(
     }
 }
 
-/** 초록 그라데이션 헤더 + 원형 프로필 + 이름. */
+/** 초록 그라데이션 헤더 + 원형 프로필 + 이름 + 밑줄 이메일. */
 @Composable
-private fun ProfileHeader(name: String) {
+private fun ProfileHeader(name: String, email: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -298,6 +305,13 @@ private fun ProfileHeader(name: String) {
                 style = MaterialTheme.typography.titleMedium,
                 color = CardWhite,
             )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = email.ifBlank { "이메일 미등록" },
+                style = MaterialTheme.typography.bodySmall,
+                color = CardWhite.copy(alpha = 0.9f),
+                textDecoration = TextDecoration.Underline,
+            )
         }
     }
 }
@@ -322,8 +336,18 @@ fun MyInfoScreen(onBack: () -> Unit) {
     var memberInfo by remember { mutableStateOf<MemberInfoResponse?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
+    var birth by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var education by remember { mutableStateOf(educationOptions.first()) }
+    // 마지막으로 저장된 생년월일·이메일·학력 (바뀐 게 있을 때만 저장 버튼을 켠다)
+    var savedDetails by remember { mutableStateOf(Triple("", "", "")) }
 
     LaunchedEffect(Unit) {
+        birth = prefs.birthDate.first()
+        email = prefs.email.first()
+        education = prefs.education.first().ifBlank { educationOptions.first() }
+        // 화면에 보이는 기본 선택값(중학생)과 같은 기준으로 비교해야, 아무것도 안 바꿨을 때 저장 버튼이 꺼진다
+        savedDetails = Triple(birth, email, education)
         nickname = prefs.memberName.first()
         savedNickname = nickname
         val id = prefs.memberId.first() ?: return@LaunchedEffect
@@ -339,7 +363,9 @@ fun MyInfoScreen(onBack: () -> Unit) {
     }
 
     val trimmed = nickname.trim()
-    val canSave = !saving && memberId != null && trimmed.isNotEmpty() && trimmed != savedNickname
+    val nicknameChanged = memberId != null && trimmed.isNotEmpty() && trimmed != savedNickname
+    val detailsChanged = Triple(birth, email, education) != savedDetails
+    val canSave = !saving && trimmed.isNotEmpty() && (nicknameChanged || detailsChanged)
 
     Column(
         Modifier
@@ -367,6 +393,43 @@ fun MyInfoScreen(onBack: () -> Unit) {
                 color = if (message != null && message != SAVED_MESSAGE) Destructive else LabelSecondary,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
             )
+
+            SectionHeader("기본 정보")
+            InsetCard {
+                FieldRow("생년월일", birth, "2007.01.01") { birth = it; message = null }
+                RowDivider(inset = 16.dp)
+                FieldRow("이메일", email, "example@email.com") { email = it; message = null }
+            }
+
+            SectionHeader("학력 · 학년")
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                educationOptions.chunked(3).forEach { rowOptions ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowOptions.forEach { option ->
+                            val selected = option == education
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (selected) AccentGreen else CardWhite)
+                                    .pressable { education = option; message = null },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    option,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = if (selected) CardWhite else LabelPrimary,
+                                )
+                            }
+                        }
+                        repeat(3 - rowOptions.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            }
 
             SectionHeader("로그인 계정")
             InsetCard {
@@ -396,14 +459,25 @@ fun MyInfoScreen(onBack: () -> Unit) {
                 enabled = canSave,
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
-                val id = memberId ?: return@PrimaryButton
                 saving = true
                 scope.launch {
+                    // 생년월일·이메일·학력은 기기에 바로 저장
+                    if (detailsChanged) {
+                        prefs.setProfileDetails(email.trim(), education, birth.trim())
+                        savedDetails = Triple(birth, email, education)
+                    }
+                    val id = memberId
+                    if (!nicknameChanged || id == null) {
+                        message = SAVED_MESSAGE
+                        saving = false
+                        return@launch
+                    }
+                    // 닉네임은 랭킹에 쓰이므로 서버에 반영
                     val response = runCatching {
                         ApiClient.memberApi.update(id, MemberUpdateRequest(trimmed))
                     }.getOrNull()
                     message = when {
-                        response == null -> "저장하지 못했어요. 네트워크 연결을 확인해 주세요."
+                        response == null -> "닉네임을 저장하지 못했어요. 네트워크 연결을 확인해 주세요."
                         response.isSuccessful -> {
                             val newName = response.body()?.nickname ?: trimmed
                             prefs.setMemberName(newName)
@@ -423,7 +497,7 @@ fun MyInfoScreen(onBack: () -> Unit) {
 }
 
 private const val MAX_NICKNAME_LENGTH = 20
-private const val SAVED_MESSAGE = "닉네임을 저장했어요."
+private const val SAVED_MESSAGE = "저장했어요."
 
 @Composable
 private fun FieldRow(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit) {
