@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,6 +37,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.sm.myapplication.data.repository.AppRepository
 import com.sm.myapplication.ui.components.DateWheelPicker
+import com.sm.myapplication.ui.components.DestructiveConfirmDialog
 import com.sm.myapplication.ui.components.DialogHeader
 import com.sm.myapplication.ui.components.PrimaryButton
 import com.sm.myapplication.ui.theme.CardWhite
@@ -57,6 +59,7 @@ fun DDayDialog(onClose: () -> Unit) {
 
     var date by remember { mutableStateOf(LocalDate.now()) }
     var label by remember { mutableStateOf(savedLabel) }
+    var confirmDelete by remember { mutableStateOf(false) }
 
     LaunchedEffect(savedDay, savedLabel) {
         savedDay?.let { date = LocalDate.ofEpochDay(it) }
@@ -96,8 +99,34 @@ fun DDayDialog(onClose: () -> Unit) {
                         onClose()
                     }
                 }
+
+                // 이미 설정된 디데이가 있을 때만 삭제 버튼을 보인다.
+                if (savedDay != null) {
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(
+                        onClick = { confirmDelete = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("디데이 삭제", color = Destructive, style = MaterialTheme.typography.titleSmall)
+                    }
+                }
             }
         }
+    }
+
+    if (confirmDelete) {
+        DestructiveConfirmDialog(
+            title = "디데이를 삭제할까요?",
+            message = "홈과 캘린더에서 디데이 표시가 사라져요.",
+            onConfirm = {
+                confirmDelete = false
+                scope.launch {
+                    repo.deleteDDay()
+                    onClose()
+                }
+            },
+            onDismiss = { confirmDelete = false },
+        )
     }
 }
 

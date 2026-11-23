@@ -25,7 +25,19 @@ interface StudySessionDao {
 
     @Query("DELETE FROM study_sessions WHERE durationMs > 43200000")
     suspend fun deleteAbnormal()
+
+    /** 서버 기록과 겹치는지 비교할 때 쓴다(서버는 초 단위로 저장한다). */
+    @Query("SELECT startTime / 1000 AS startSec, endTime / 1000 AS endSec FROM study_sessions")
+    suspend fun getAllSpans(): List<SessionSpan>
+
+    @Insert
+    suspend fun insertAll(sessions: List<StudySessionEntity>)
+
+    @Query("DELETE FROM study_sessions")
+    suspend fun deleteAll()
 }
+
+data class SessionSpan(val startSec: Long, val endSec: Long)
 
 data class DailyTotal(val day: Long, val total: Long)
 

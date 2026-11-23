@@ -4,6 +4,7 @@ import com.sm.myapplication.network.dto.DDayRequest
 import com.sm.myapplication.network.dto.DDayResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -16,4 +17,8 @@ interface DDayApi {
     // 설정/수정 통합(upsert)
     @PUT("dday/{memberId}")
     suspend fun set(@Path("memberId") memberId: Long, @Body request: DDayRequest): Response<DDayResponse>
+
+    // 성공하면 204(본문 없음)
+    @DELETE("dday/{memberId}")
+    suspend fun delete(@Path("memberId") memberId: Long): Response<Unit>
 }

@@ -3,6 +3,7 @@ package com.example.smartstudytimer.study.record.service;
 import com.example.smartstudytimer.member.Entity.Member;
 import com.example.smartstudytimer.member.repository.MemberRepository;
 import com.example.smartstudytimer.study.record.controller.dto.StudyRecordRequest;
+import com.example.smartstudytimer.study.record.controller.dto.StudyRecordResponse;
 import com.example.smartstudytimer.study.record.Entity.StudyMode;
 import com.example.smartstudytimer.study.record.Entity.StudyRecord;
 import com.example.smartstudytimer.study.record.repository.StudyRepository;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,14 @@ public class StudyServiceImpl implements StudyService {
     private final MemberRepository memberRepository;
     private final DailySummaryRepository dailySummaryRepository;
     private final StudySummaryRepository studySummaryRepository; 
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StudyRecordResponse> getRecords(Long memberId) {
+        return studyRepository.findByMember_MemberIdOrderByStartTimeAsc(memberId).stream()
+                .map(StudyRecordResponse::from)
+                .toList();
+    }
 
     @Override
     @Transactional
