@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -114,18 +116,24 @@ fun MainHomeScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(IntrinsicSize.Min)
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            StatCard(
-                label = "D-DAY",
-                value = daysLeft?.let { if (it >= 0) "D-$it" else "D+${-it}" } ?: "미설정",
-                valueColor = if (daysLeft != null) AccentInk else LabelTertiary,
-                caption = daysLeft?.let { state.ddayLabel },
-                actionText = if (daysLeft != null) "수정" else "날짜 정하기",
-                onAction = onOpenDDay,
-                modifier = Modifier.weight(1f),
-            )
+            if (daysLeft != null) {
+                StatCard(
+                    label = "D-DAY",
+                    value = if (daysLeft >= 0) "D-$daysLeft" else "D+${-daysLeft}",
+                    valueColor = AccentInk,
+                    caption = state.ddayLabel,
+                    actionText = "수정",
+                    onAction = onOpenDDay,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                )
+            } else {
+                // 아직 날짜가 없을 때는 '미설정' 값 대신 설정을 권하는 버튼처럼 보여준다
+                DDayEmptyCard(onClick = onOpenDDay, modifier = Modifier.weight(1f).fillMaxHeight())
+            }
             StatCard(
                 label = "나의 티어",
                 value = state.tierName,
@@ -133,7 +141,7 @@ fun MainHomeScreen(
                 caption = null,
                 actionText = "기준표 보기 ›",
                 onAction = onOpenTier,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 leading = state.tierServerName?.let { tier -> { TierBadge(tier, size = 26.dp) } },
             )
         }
@@ -250,9 +258,9 @@ private fun WeeklyCard(weekly: WeeklyUiState) {
             Column(Modifier.weight(1f)) {
                 Text("최근 7일 공부", style = MaterialTheme.typography.titleMedium, color = LabelPrimary)
                 Text(
-                    formatStudyDuration(weekTotalMs),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LabelSecondary,
+                    "합계 " + formatStudyDuration(weekTotalMs),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = AccentInk,
                 )
             }
             if (weekly.streakDays > 0) {
@@ -292,6 +300,15 @@ private fun WeeklyCard(weekly: WeeklyUiState) {
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
+                    // 막대만으로는 양을 알기 어려워 공부한 날은 위에 짧은 시간을 적는다
+                    Text(
+                        if (day.totalMs > 0) formatBarLabel(day.totalMs) else "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isToday) AccentInk else LabelSecondary,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    Spacer(Modifier.height(3.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -321,6 +338,53 @@ private fun WeeklyCard(weekly: WeeklyUiState) {
 }
 
 private val WEEKLY_BAR_MAX = 64.dp
+
+/** 막대 위 짧은 표기: "<1분", "45분", "1.5시간", "12시간" (좁은 칸에 들어가도록) */
+private fun formatBarLabel(ms: Long): String {
+    val min = ms / 60_000
+    return when {
+        min < 1 -> "<1분"
+        min < 60 -> "${min}분"
+        min < 600 -> {
+            val tenths = (min * 10 + 30) / 60 // 0.1시간 단위 반올림
+            if (tenths % 10 == 0L) "${tenths / 10}시간" else "${tenths / 10}.${tenths % 10}시간"
+        }
+        else -> "${(min + 30) / 60}시간"
+    }
+}
+
+@Composable
+private fun DDayEmptyCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(CardWhite)
+            .pressable(onClick = onClick)
+            .padding(14.dp),
+    ) {
+        Text("D-DAY", style = MaterialTheme.typography.labelSmall, color = LabelSecondary)
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(AccentTint),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = null, tint = AccentInk, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.width(8.dp))
+            Text("날짜 정하기", style = MaterialTheme.typography.titleSmall, color = AccentInk)
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "시험·목표일까지 남은 날을 보여줘요",
+            style = MaterialTheme.typography.labelSmall,
+            color = LabelTertiary,
+        )
+    }
+}
 private val StreakOrange = androidx.compose.ui.graphics.Color(0xFFFF7A1A)
 
 @Composable

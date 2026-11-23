@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -297,16 +296,8 @@ private fun EmptyPodiumColumn(rank: Long, barHeight: Int, modifier: Modifier = M
 @Composable
 private fun PodiumColumn(ranker: TopRanker, modifier: Modifier = Modifier) {
     val isFirst = ranker.rank == 1L
+    // 1위는 배지 크기·진한 단상으로 충분히 구분돼서, 배지 위 트로피는 겹치는 장식이라 뺐다
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        if (isFirst) {
-            Icon(
-                Icons.Rounded.EmojiEvents,
-                contentDescription = "1위",
-                tint = Color(0xFFF5B301),
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.height(2.dp))
-        }
         val avatarSize = if (isFirst) 54.dp else 46.dp
         if (tierBadgeRes(ranker.tier) != null) {
             TierBadge(ranker.tier, size = avatarSize)

@@ -250,6 +250,7 @@ class AppRepository(
     fun observeTodaySessionMs(day: Long) = studySessionDao.observeTotalMsByDate(day)
     fun observeMonthlyTotals(fromDay: Long, toDay: Long) = studySessionDao.observeMonthlyTotals(fromDay, toDay)
     fun observeSessionsByDate(day: Long) = studySessionDao.observeByDate(day)
+    fun observeModeTotals(fromDay: Long, toDay: Long) = studySessionDao.observeModeTotals(fromDay, toDay)
 
     val ddayEpochDay = prefs.ddayEpochDay
     val ddayLabel = prefs.ddayLabel

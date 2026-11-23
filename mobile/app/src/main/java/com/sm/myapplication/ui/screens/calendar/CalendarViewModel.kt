@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sm.myapplication.data.dao.DailyTotal
+import com.sm.myapplication.data.entity.StudyMode
 import com.sm.myapplication.data.entity.StudySessionEntity
 import com.sm.myapplication.data.entity.TodoEntity
 import com.sm.myapplication.data.repository.AppRepository
@@ -25,6 +26,9 @@ data class CalendarUiState(
     val selectedDaySessions: List<StudySessionEntity> = emptyList(),
     val ddayEpochDay: Long? = null,
     val ddayLabel: String = "",
+    /** 이번 달 순공모드 / 일반 타이머 합계 */
+    val pureMs: Long = 0L,
+    val basicMs: Long = 0L,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -47,6 +51,13 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
 
     private val ddayFlow = combine(repo.ddayEpochDay, repo.ddayLabel) { day, label -> day to label }
 
+    private val modeFlow = _yearMonth.flatMapLatest { ym ->
+        repo.observeModeTotals(ym.atDay(1).toEpochDay(), ym.atEndOfMonth().toEpochDay()).map { list ->
+            val pure = list.filter { it.mode == StudyMode.PURE.name }.sumOf { it.total }
+            pure to (list.sumOf { it.total } - pure)
+        }
+    }
+
     val state = combine(
         combine(_yearMonth, _selected, monthlyFlow, selectedTodosFlow, selectedSessionsFlow) { ym, sel, totals, todos, sessions ->
             CalendarUiState(
@@ -58,8 +69,9 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
             )
         },
         ddayFlow,
-    ) { base, dday ->
-        base.copy(ddayEpochDay = dday.first, ddayLabel = dday.second)
+        modeFlow,
+    ) { base, dday, modes ->
+        base.copy(ddayEpochDay = dday.first, ddayLabel = dday.second, pureMs = modes.first, basicMs = modes.second)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CalendarUiState())
 
     fun prevMonth() { _yearMonth.value = _yearMonth.value.minusMonths(1) }
