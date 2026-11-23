@@ -80,6 +80,7 @@ import com.sm.myapplication.data.entity.StudyMode
 import com.sm.myapplication.data.repository.AppRepository
 import com.sm.myapplication.ui.screens.timer.TimerPauseCause
 import com.sm.myapplication.ui.screens.timer.TimerController
+import com.sm.myapplication.ui.components.formatDuration
 import com.sm.myapplication.ui.components.NavBar
 import com.sm.myapplication.ui.components.pressable
 import com.sm.myapplication.ui.screens.timer.ResponsiveTimerText
@@ -686,19 +687,6 @@ private fun PureModeActionButton(
     }
 }
 
-/** "3분 12초", "1시간 5분" */
-private fun formatSessionDuration(ms: Long): String {
-    val totalSec = (ms / 1000).coerceAtLeast(0)
-    val h = totalSec / 3600
-    val m = (totalSec / 60) % 60
-    val s = totalSec % 60
-    return when {
-        h > 0 -> if (m > 0) "${h}시간 ${m}분" else "${h}시간"
-        m > 0 -> if (s > 0) "${m}분 ${s}초" else "${m}분"
-        else -> "${s}초"
-    }
-}
-
 @Composable
 private fun EndConfirmDialog(elapsedMs: Long, onContinue: () -> Unit, onEnd: () -> Unit) {
     AlertDialog(
@@ -710,7 +698,7 @@ private fun EndConfirmDialog(elapsedMs: Long, onContinue: () -> Unit, onEnd: () 
         text = {
             Text(
                 if (elapsedMs < 1_000L) "아직 순공한 시간이 없어요. 지금 끝내면 기록 없이 나가요."
-                else "지금까지 ${formatSessionDuration(elapsedMs)} 순공했어요. 끝내면 기록이 저장돼요."
+                else "지금까지 ${formatDuration(elapsedMs)} 순공했어요. 끝내면 기록이 저장돼요."
             )
         },
         confirmButton = {
@@ -742,13 +730,13 @@ private fun SessionResultDialog(sessionMs: Long, onDone: () -> Unit) {
             Column {
                 Text("이번 순공", fontSize = 13.sp)
                 Text(
-                    formatSessionDuration(sessionMs),
+                    formatDuration(sessionMs),
                     color = FocusGreen,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(Modifier.height(10.dp))
-                Text("오늘 공부 합계 ${formatSessionDuration(todayMs)}", fontSize = 14.sp)
+                Text("오늘 공부 합계 ${formatDuration(todayMs)}", fontSize = 14.sp)
             }
         },
         confirmButton = {

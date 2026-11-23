@@ -217,10 +217,13 @@ private fun MonthSummaryCard(totalsByDay: Map<Long, Long>, pureMs: Long, basicMs
                 if (pureRatio < 1f) Spacer(Modifier.weight((1f - pureRatio).coerceAtLeast(0.02f)))
             }
             Spacer(Modifier.height(8.dp))
+            // 분 단위로 따로 버림하면 합이 누적 시간과 1분씩 어긋나므로(6분+3분≠10분),
+            // 일반 시간은 "누적(분) − 순공(분)"으로 보여준다.
+            val basicShownMs = (totalMs / 60_000 - pureMs / 60_000) * 60_000
             Row {
                 LegendDot(Green500, "순공 ${formatStudyDuration(pureMs)}")
                 Spacer(Modifier.width(14.dp))
-                LegendDot(HeatLevel2, "일반 ${formatStudyDuration(basicMs)}")
+                LegendDot(HeatLevel2, "일반 ${formatStudyDuration(if (basicShownMs > 0) basicShownMs else basicMs)}")
             }
         }
 
