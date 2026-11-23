@@ -116,6 +116,8 @@ fun PureModeScreen(onBack: () -> Unit) {
     var pureModeSettings by remember { mutableStateOf(PureModeUserSettings.load(context)) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showEndConfirm by remember { mutableStateOf(false) }
+    // 종료 확인 창을 연 순간의 시간(창이 떠 있는 동안 흐른 시간은 저장하지 않음)
+    var endRequestedElapsedMs by remember { mutableStateOf<Long?>(null) }
     // 저장을 마친 이번 세션 시간. null이 아니면 결과 화면을 보여준다.
     var finishedSessionMs by remember { mutableStateOf<Long?>(null) }
     val statusUi = remember(state.isRunning, state.pauseCause, state.message, cameraStatus) {
@@ -265,18 +267,24 @@ fun PureModeScreen(onBack: () -> Unit) {
     val endSession: () -> Unit = {
         if (!sessionEnded) {
             sessionEnded = true
-            val sessionMs = TimerController.state.value.elapsedMs
+            // 확인 창에서 보여준 시간으로 저장한다(창이 떠 있던 동안은 빼고).
+            val sessionMs = endRequestedElapsedMs ?: TimerController.state.value.elapsedMs
             // Unbind now, not after the navigation transition. A new visit must
             // not reuse a service still owned by this outgoing screen.
             cameraSession.close()
-            TimerController.stop(AppRepository.get(context.applicationContext as Application))
+            TimerController.stop(AppRepository.get(context.applicationContext as Application), maxElapsedMs = sessionMs)
             // 1초 미만은 저장되지 않으므로(TimerController) 결과 화면 없이 바로 나간다
             if (sessionMs < 1_000L) onBack() else finishedSessionMs = sessionMs
         }
     }
     // 종료 버튼·뒤로가기: 바로 끝내지 않고 한 번 확인한다 (옆 버튼을 누르려다 실수로 끝내는 일 방지)
     val requestFinish: () -> Unit = {
-        if (finishedSessionMs != null) onBack() else showEndConfirm = true
+        if (finishedSessionMs != null) {
+            onBack()
+        } else {
+            endRequestedElapsedMs = TimerController.state.value.elapsedMs
+            showEndConfirm = true
+        }
     }
     BackHandler(onBack = requestFinish)
 
@@ -390,8 +398,11 @@ fun PureModeScreen(onBack: () -> Unit) {
 
     if (showEndConfirm) {
         EndConfirmDialog(
-            elapsedMs = TimerController.state.value.elapsedMs,
-            onContinue = { showEndConfirm = false },
+            elapsedMs = endRequestedElapsedMs ?: TimerController.state.value.elapsedMs,
+            onContinue = {
+                showEndConfirm = false
+                endRequestedElapsedMs = null
+            },
             onEnd = {
                 showEndConfirm = false
                 endSession()

@@ -360,7 +360,9 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
                     if (originalImage == null) throw new IllegalStateException("No valid face image");
                     // Low-light ON must retain the exact normal-mode detector/input.
                     // Enhancement is an optional rescue, not a replacement for a good result.
-                    List<Face> faces = Tasks.await(faceDetector.process(originalImage));
+                    // 배경의 아주 작은 '얼굴'(사진·무늬 등)은 공부하는 사람이 아니다.
+                    List<Face> faces = StudyFaceSize.keepFaces(
+                            Tasks.await(faceDetector.process(originalImage)), outputWidth, outputHeight);
                     lowLightApplied = false;
                     if (lowLightThisFrame && !faces.isEmpty()) {
                         lowLightDiagnostics = "software=original-face enhancedFrames=" + enhancedFrameCount;
@@ -379,7 +381,9 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
                                             lastRescuePath = "budget-skip";
                                         } else {
                                             lastRescuePath = "enhanced-fast";
-                                            List<Face> rescued = Tasks.await(faceDetector.process(InputImage.fromBitmap(analysisBitmap, 0)));
+                                            List<Face> rescued = StudyFaceSize.keepFaces(
+                                                    Tasks.await(faceDetector.process(InputImage.fromBitmap(analysisBitmap, 0))),
+                                                    analysisBitmap.getWidth(), analysisBitmap.getHeight());
                                             lastRescueMs = SystemClock.elapsedRealtime() - rescueStarted;
                                             // Slow ACCURATE work runs only AFTER the new
                                             // partial-face model on its independent worker.
@@ -498,6 +502,16 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
         }
     }
 
+    private static void dropBackgroundSizedBoxes(List<Rect> boxes, int frameWidth, int frameHeight) {
+        if (boxes.isEmpty()) return;
+        List<Rect> kept = StudyFaceSize.keepBoxes(boxes, frameWidth, frameHeight);
+        if (kept.size() != boxes.size()) {
+            Log.d(TAG, "studyPoseRescue dropped small boxes=" + (boxes.size() - kept.size()));
+            boxes.clear();
+            boxes.addAll(kept);
+        }
+    }
+
     private boolean submitOriginalFaceRescue(Bitmap source, Bitmap enhanced,
                                               FaceDetector ready, long capturedAt) {
         if (closed || !faceRescueBusy.compareAndSet(false, true)) return false;
@@ -541,6 +555,9 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
                     } catch (Exception error) {
                         Log.w(TAG, "Optional partial-face rescue failed", error);
                     }
+                    // A tiny background "face" must not stop the ACCURATE pass from trying.
+                    dropBackgroundSizedBoxes(boxes, owned.getWidth(), owned.getHeight());
+                    if (boxes.isEmpty()) enhancedDetected = false;
                     long accurateStarted = SystemClock.elapsedRealtime();
                     boolean useEnhanced = ownedEnhanced != null;
                     if (boxes.isEmpty() && ready != null && !closed
@@ -564,6 +581,7 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
                             if (useEnhanced) lowLightRescueBudget.accurateFinished(completedAt, completedAt - accurateStarted);
                         }
                     }
+                    dropBackgroundSizedBoxes(boxes, owned.getWidth(), owned.getHeight());
                     // Preserve capture time: stale model results must still be
                     // rejected by the existing detection/timer controller.
                     if (!closed && !boxes.isEmpty()) {
@@ -575,9 +593,18 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
                         }
                         rememberFaceSearchHint(nextHint, owned.getWidth(), owned.getHeight(), capturedAt);
                     }
+                    if (!boxes.isEmpty()) {
+                        // Metadata only (no image): which rescue path fired and how big the box was,
+                        // so empty-seat false positives can be tuned later.
+                        Rect b = boxes.get(0);
+                        Log.d(TAG, "studyPoseRescue path=" + lastRescuePath + " boxes=" + boxes.size()
+                                + " box=" + b.width() + "x" + b.height() + "@" + b.left + "," + b.top
+                                + " frame=" + owned.getWidth() + "x" + owned.getHeight());
+                    }
                     if (!closed && listener != null) listener.onDetection(new DetectionResult(
                             !boxes.isEmpty(), false, false, boxes, owned.getWidth(), owned.getHeight(),
-                            capturedFrontCamera, enhancedDetected, true, capturedAt));
+                            capturedFrontCamera, enhancedDetected, true, capturedAt,
+                            !boxes.isEmpty() && !StudyFaceSize.touchesExitEdge(boxes.get(0), owned.getWidth())));
                 } finally {
                     lastRescueMs = SystemClock.elapsedRealtime() - startedAt;
                     owned.recycle();
