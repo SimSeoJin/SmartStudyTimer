@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -243,6 +244,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit, viewModel: LoginViewModel = viewMode
             Spacer(Modifier.weight(0.45f))
 
             val errorMessage = uiState.errorMessage
+            // 오류 문구는 4초 뒤 사라진다(다시 시도해도 이전 오류가 계속 남아 있던 문제).
+            LaunchedEffect(errorMessage) {
+                if (errorMessage != null) {
+                    kotlinx.coroutines.delay(4_000)
+                    viewModel.clearError()
+                }
+            }
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,

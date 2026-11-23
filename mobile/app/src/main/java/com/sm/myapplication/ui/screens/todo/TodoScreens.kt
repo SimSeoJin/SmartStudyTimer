@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +49,7 @@ import com.sm.myapplication.data.entity.TodoCategory
 import com.sm.myapplication.data.entity.TodoEntity
 import com.sm.myapplication.ui.components.AppSwitch
 import com.sm.myapplication.ui.components.DateWheelPicker
+import com.sm.myapplication.ui.components.DestructiveConfirmDialog
 import com.sm.myapplication.ui.components.InsetCard
 import com.sm.myapplication.ui.components.LargeTitle
 import com.sm.myapplication.ui.components.NavBar
@@ -79,6 +81,7 @@ fun TodoListScreen(
     viewModel: TodoListViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var pendingDelete by remember { mutableStateOf<TodoEntity?>(null) }
     val dateText = remember(state.today) {
         state.today.format(DateTimeFormatter.ofPattern("M월 d일 EEEE", Locale.KOREAN))
     }
@@ -131,7 +134,7 @@ fun TodoListScreen(
                     SectionHeader("진행 중 · ${state.activeTodos.size}")
                     InsetCard {
                         state.activeTodos.forEachIndexed { index, todo ->
-                            TodoRow(todo) { viewModel.toggle(todo) }
+                            TodoRow(todo, onToggle = { viewModel.toggle(todo) }, onDelete = { pendingDelete = todo })
                             if (index != state.activeTodos.lastIndex) RowDivider(inset = 48.dp)
                         }
                     }
@@ -141,7 +144,7 @@ fun TodoListScreen(
                     SectionHeader("완료 · ${state.completedTodos.size}")
                     InsetCard {
                         state.completedTodos.forEachIndexed { index, todo ->
-                            TodoRow(todo) { viewModel.toggle(todo) }
+                            TodoRow(todo, onToggle = { viewModel.toggle(todo) }, onDelete = { pendingDelete = todo })
                             if (index != state.completedTodos.lastIndex) RowDivider(inset = 48.dp)
                         }
                     }
@@ -157,10 +160,22 @@ fun TodoListScreen(
             onClick = onAdd,
         )
     }
+
+    pendingDelete?.let { todo ->
+        DestructiveConfirmDialog(
+            title = "할 일을 삭제할까요?",
+            message = "‘${todo.title}’을(를) 목록에서 지워요.",
+            onConfirm = {
+                viewModel.delete(todo)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
+    }
 }
 
 @Composable
-private fun TodoRow(todo: TodoEntity, onToggle: () -> Unit) {
+private fun TodoRow(todo: TodoEntity, onToggle: () -> Unit, onDelete: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -191,6 +206,22 @@ private fun TodoRow(todo: TodoEntity, onToggle: () -> Unit) {
         }
         todo.timeMinutes?.let {
             Text(formatClock(it), style = MaterialTheme.typography.bodySmall, color = LabelTertiary)
+        }
+        // 줄 전체는 완료 토글이라, 삭제는 오른쪽 끝의 작은 버튼으로 따로 둔다.
+        Spacer(Modifier.width(4.dp))
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .pressable(onClick = onDelete),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.DeleteOutline,
+                contentDescription = "${todo.title} 삭제",
+                tint = LabelTertiary,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
