@@ -575,6 +575,14 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
                         }
                         rememberFaceSearchHint(nextHint, owned.getWidth(), owned.getHeight(), capturedAt);
                     }
+                    if (!boxes.isEmpty()) {
+                        // Metadata only (no image): which rescue path fired and how big the box was,
+                        // so empty-seat false positives can be tuned later.
+                        Rect b = boxes.get(0);
+                        Log.d(TAG, "studyPoseRescue path=" + lastRescuePath + " boxes=" + boxes.size()
+                                + " box=" + b.width() + "x" + b.height() + "@" + b.left + "," + b.top
+                                + " frame=" + owned.getWidth() + "x" + owned.getHeight());
+                    }
                     if (!closed && listener != null) listener.onDetection(new DetectionResult(
                             !boxes.isEmpty(), false, false, boxes, owned.getWidth(), owned.getHeight(),
                             capturedFrontCamera, enhancedDetected, true, capturedAt, !boxes.isEmpty()));

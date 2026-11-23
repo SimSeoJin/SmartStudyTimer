@@ -885,6 +885,46 @@ class LocalPureModeUiIntegrationTest {
     }
 
     @Test
+    fun studyPoseAloneCannotStartOrResumeTheTimer() {
+        detector.handle(studyPose(face = true))
+        assertFalse("빈 자리 오검출로 시작하면 안 된다", TimerController.state.value.isRunning)
+
+        detector.handle(result(face = true))
+        assertTrue(TimerController.state.value.isRunning)
+        nowMs = 1_000L
+        detector.handle(result())
+        nowMs = 6_000L
+        detector.checkTimeout()
+        assertFalse(TimerController.state.value.isRunning)
+
+        nowMs = 15_000L
+        detector.handle(studyPose(face = true))
+        assertFalse("자리를 비운 뒤 보조 검출만으로 재개되면 안 된다", TimerController.state.value.isRunning)
+        nowMs = 16_000L
+        detector.handle(result(face = true))
+        assertTrue("정면 얼굴이 보이면 재개", TimerController.state.value.isRunning)
+    }
+
+    @Test
+    fun studyPoseCannotSustainForeverWithoutFrontalFace() {
+        detector.handle(result(face = true))
+        // 보조 검출만 계속 잡히는 상태로 5분 넘게 흐름
+        var t = 1_000L
+        while (t <= PureModeDetectionController.STUDY_POSE_MAX_MS) {
+            nowMs = t
+            detector.handle(studyPose(face = true))
+            t += 10_000L
+        }
+        assertTrue(TimerController.state.value.isRunning)
+        nowMs = PureModeDetectionController.STUDY_POSE_MAX_MS + 1_000L
+        detector.handle(studyPose(face = true))
+        detector.handle(result())
+        nowMs += 5_000L
+        detector.handle(result())
+        assertFalse("정면 얼굴 없이 5분이 지나면 보조 검출만으로는 이어주지 않는다", TimerController.state.value.isRunning)
+    }
+
+    @Test
     fun faceLossRollsBackOnlyTheCurrentRunningSegment() {
         TimerController.start(StudyMode.PURE, autoRun = true)
         Thread.sleep(300L)
