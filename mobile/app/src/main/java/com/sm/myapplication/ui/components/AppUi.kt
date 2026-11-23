@@ -474,13 +474,15 @@ fun formatStudyDuration(ms: Long): String {
     }
 }
 
+/** 기록 한 건의 길이: "3분 12초", "1시간 5분", "59초". */
 fun formatDuration(ms: Long): String {
     val totalSec = (ms / 1000).coerceAtLeast(0)
     val h = totalSec / 3600
     val m = (totalSec / 60) % 60
+    val s = totalSec % 60
     return when {
-        h > 0 -> "%dh %02dm".format(h, m)
-        m > 0 -> "%dm".format(m)
-        else -> "%ds".format(totalSec)
+        h > 0 -> if (m > 0) "${h}시간 ${m}분" else "${h}시간"
+        m > 0 -> if (s > 0) "${m}분 ${s}초" else "${m}분"
+        else -> "${s}초"
     }
 }
