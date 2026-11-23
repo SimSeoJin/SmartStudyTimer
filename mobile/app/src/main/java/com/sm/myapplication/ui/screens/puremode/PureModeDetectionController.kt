@@ -18,8 +18,12 @@ class PureModeDetectionController(
     private var lastGestureObservationAt: Long? = null
     private var lastCommandObservationAt: Long? = null
     private var lastCommandReceivedAt: Long? = null
+    // 마지막 얼굴 감지가 '고개 숙인 자세' 보조 검출이었는지. 보조 검출은 드문드문
+    // 성공하므로, 그 사이 공백 때문에 필기 중 타이머가 멈췄다 켜졌다 하지 않게 한다.
+    private var lastPositiveWasStudyPose = false
 
     fun reset() {
+        lastPositiveWasStudyPose = false
         faceMissingStartedAt = null
         lastFaceObservationAt = null
         lastFaceResultReceivedAt = null
@@ -71,6 +75,7 @@ class PureModeDetectionController(
                 lastFaceResultReceivedAt = now
                 if (result.faceDetected) {
                     faceMissingStartedAt = null
+                    lastPositiveWasStudyPose = result.studyPoseRescue
                     TimerController.onFaceDetected()
                 } else if (faceMissingStartedAt == null) {
                     faceMissingStartedAt = now
@@ -87,18 +92,31 @@ class PureModeDetectionController(
             faceMissingStartedAt = now
         }
         if (faceTimeoutExpired(now)) {
-            TimerController.onFaceLost(faceAwayTimeoutMs)
+            // 얼굴이 없던 구간(유예 시간 포함)은 순공 시간에서 뺀다.
+            val absentSince = faceMissingStartedAt
+                ?: listOfNotNull(lastFaceResultReceivedAt, lastCommandReceivedAt).maxOrNull()
+            val absentMs = absentSince?.let { (now - it).coerceAtLeast(0L) } ?: 0L
+            TimerController.onFaceLost(absenceGraceMs(), absentMs)
         }
     }
+
+    /** 고개 숙인 자세로만 잡히는 중이면 사용자 설정보다 길게 기다린다. */
+    private fun absenceGraceMs(): Long =
+        if (lastPositiveWasStudyPose) maxOf(faceAwayTimeoutMs, STUDY_POSE_GRACE_MS) else faceAwayTimeoutMs
 
     private fun gestureMaxAgeMs(): Long = minOf(faceAwayTimeoutMs, 3_000L)
 
     private fun faceTimeoutExpired(now: Long): Boolean {
-        val missingExpired = faceMissingStartedAt?.let { now - it >= faceAwayTimeoutMs } ?: false
+        val missingExpired = faceMissingStartedAt?.let { now - it >= absenceGraceMs() } ?: false
         // A real command grants a new watchdog grace, but is deliberately not
         // recorded as a positive face or as an analyzed face heartbeat.
         val streamAnchor = listOfNotNull(lastFaceResultReceivedAt, lastCommandReceivedAt).maxOrNull()
         val streamExpired = streamAnchor?.let { now - it >= faceAwayTimeoutMs } ?: false
         return missingExpired || streamExpired
+    }
+
+    companion object {
+        /** 필기 자세에서 보조 검출 사이 공백을 메우는 시간. 실측 공백은 최대 약 17초였다. */
+        const val STUDY_POSE_GRACE_MS = 20_000L
     }
 }

@@ -88,13 +88,17 @@ object TimerController {
         }
     }
 
-    fun onFaceLost(faceAwayTimeoutMs: Long? = null) {
+    /**
+     * [absentMs]: 얼굴이 마지막으로 보인 뒤 흐른 시간. 그만큼은 공부가 아니었으므로
+     * 이번 측정 구간 안에서 되돌린다(유예 시간이 순공 시간에 섞이지 않게).
+     */
+    fun onFaceLost(faceAwayTimeoutMs: Long? = null, absentMs: Long = 0L) {
         val current = _state.value
         if (current.mode != StudyMode.PURE) return
 
         if (current.isRunning) {
             val prefix = faceAwayTimeoutMs?.let { "${it / 1000}초 이상 " }.orEmpty()
-            pauseInternal(TimerPauseCause.AUTO_FACE_LOST, "${prefix}얼굴 미감지 → 자동 일시중지")
+            pauseInternal(TimerPauseCause.AUTO_FACE_LOST, "${prefix}얼굴 미감지 → 자동 일시중지", rollbackMs = absentMs)
         } else if (current.pauseCause != TimerPauseCause.MANUAL_GESTURE) {
             updateMessage("얼굴 미감지 상태")
         }
@@ -141,9 +145,10 @@ object TimerController {
         }
     }
 
-    fun stop(repo: AppRepository) {
+    /** [maxElapsedMs]: 종료 확인 창을 연 시점의 시간. 창이 떠 있던 동안은 저장하지 않는다. */
+    fun stop(repo: AppRepository, maxElapsedMs: Long? = null) {
         val current = _state.value
-        val elapsed = currentElapsed()
+        val elapsed = currentElapsed().let { if (maxElapsedMs != null) minOf(it, maxElapsedMs) else it }
         tickJob?.cancel()
 
         val sane = elapsed in 1_000L..MAX_SESSION_MS
@@ -163,9 +168,13 @@ object TimerController {
         _state.value = TimerState()
     }
 
-    private fun pauseInternal(cause: TimerPauseCause, message: String) {
+    private fun pauseInternal(cause: TimerPauseCause, message: String, rollbackMs: Long = 0L) {
         val current = _state.value
-        val elapsed = currentElapsed()
+        // 되돌리기는 지금 흐르고 있는 구간까지만(이전 구간의 기록은 건드리지 않음)
+        val runningSegmentMs = if (current.isRunning && startedAt > 0L) {
+            (System.currentTimeMillis() - startedAt).coerceAtLeast(0L)
+        } else 0L
+        val elapsed = currentElapsed() - rollbackMs.coerceIn(0L, runningSegmentMs)
 
         if (current.isRunning) {
             elapsedBeforePause = elapsed

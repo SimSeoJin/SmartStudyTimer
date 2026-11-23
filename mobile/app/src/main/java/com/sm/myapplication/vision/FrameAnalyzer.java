@@ -577,7 +577,7 @@ public class FrameAnalyzer implements ImageAnalysis.Analyzer {
                     }
                     if (!closed && listener != null) listener.onDetection(new DetectionResult(
                             !boxes.isEmpty(), false, false, boxes, owned.getWidth(), owned.getHeight(),
-                            capturedFrontCamera, enhancedDetected, true, capturedAt));
+                            capturedFrontCamera, enhancedDetected, true, capturedAt, !boxes.isEmpty()));
                 } finally {
                     lastRescueMs = SystemClock.elapsedRealtime() - startedAt;
                     owned.recycle();
