@@ -24,6 +24,24 @@ public final class StudyFaceSize {
         return Math.max(boxWidth, boxHeight) >= minSide;
     }
 
+    /**
+     * 화면 왼쪽/오른쪽/위쪽 끝에 걸린 얼굴 = 옆으로 걸어 나가거나 일어서는 중.
+     * 고개 숙인 자세(아래쪽으로 잘리거나 가운데)와 달리 오래 기다려 줄 이유가 없다.
+     * 실측: 자리를 뜰 때 61x123@579,183 · 125x214@515,21(폭 640),
+     * 고개 숙였을 때 136x118@31,362(아래쪽 잘림) · 183x183@137,100.
+     */
+    public static boolean touchesExitEdge(Rect box, int frameWidth) {
+        return touchesExitEdge(box.left, box.top, box.right, frameWidth);
+    }
+
+    static boolean touchesExitEdge(int left, int top, int right, int frameWidth) {
+        if (frameWidth <= 0) return false;
+        float margin = frameWidth * EXIT_EDGE_FRACTION;
+        return left <= margin || right >= frameWidth - margin || top <= margin;
+    }
+
+    static final float EXIT_EDGE_FRACTION = 0.04f;
+
     static List<Face> keepFaces(List<Face> faces, int frameWidth, int frameHeight) {
         List<Face> kept = new ArrayList<>();
         for (Face face : faces) {

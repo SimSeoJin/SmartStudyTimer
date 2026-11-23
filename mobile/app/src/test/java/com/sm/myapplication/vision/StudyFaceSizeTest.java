@@ -23,6 +23,17 @@ public class StudyFaceSizeTest {
     }
 
     @Test
+    public void faceClippedAtSideOrTopMeansLeavingNotHeadDown() {
+        // 자리를 뜰 때(실측): 61x123@579,183 → 오른쪽 끝, 125x214@515,21 → 위쪽 끝
+        assertTrue(StudyFaceSize.touchesExitEdge(579, 183, 640, 640));
+        assertTrue(StudyFaceSize.touchesExitEdge(515, 21, 640, 640));
+        assertTrue(StudyFaceSize.touchesExitEdge(0, 200, 120, 640));
+        // 고개 숙인 자세(실측): 136x118@31,362(아래쪽 잘림), 183x183@137,100
+        assertFalse(StudyFaceSize.touchesExitEdge(31, 362, 167, 640));
+        assertFalse(StudyFaceSize.touchesExitEdge(137, 100, 320, 640));
+    }
+
+    @Test
     public void invalidSizesAreRejected() {
         assertFalse(StudyFaceSize.isStudyDistance(0, 100, 640, 480));
         assertFalse(StudyFaceSize.isStudyDistance(100, 100, 0, 480));
